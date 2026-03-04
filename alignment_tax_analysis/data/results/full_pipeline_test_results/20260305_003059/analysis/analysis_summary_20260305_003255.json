@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-03-05T00:32:55.078435",
+  "rows_total": 10,
+  "rows_valid": 10,
+  "models": [
+    "deepseek-chat"
+  ],
+  "files": {
+    "final_report": "data\\results\\full_pipeline_test_results\\20260305_003059\\analysis\\final_report_20260305_003255.csv",
+    "group_metrics": "data\\results\\full_pipeline_test_results\\20260305_003059\\analysis\\group_metrics_20260305_003255.csv",
+    "valid_records": "data\\results\\full_pipeline_test_results\\20260305_003059\\analysis\\valid_scored_records_20260305_003255.csv"
+  }
+}

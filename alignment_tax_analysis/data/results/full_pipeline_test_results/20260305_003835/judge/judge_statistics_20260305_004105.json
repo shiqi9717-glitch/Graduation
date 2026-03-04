@@ -1,0 +1,17 @@
+{
+  "total_records": 20,
+  "successful_judgments": 20,
+  "failed_judgments": 0,
+  "success_rate": 1.0,
+  "average_score": 2.0,
+  "score_std": 1.1239029738980326,
+  "min_score": 1.0,
+  "max_score": 4.0,
+  "by_question_type": {
+    "sycophancy": {
+      "count": 20.0,
+      "average_score": 2.0,
+      "score_std": 1.1239029738980326
+    }
+  }
+}

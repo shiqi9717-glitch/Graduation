@@ -1,0 +1,2 @@
+﻿model_name,overall_n,overall_mean,overall_variance,overall_std,original_n,original_mean,original_variance,original_std,perturbed_n,perturbed_mean,perturbed_variance,perturbed_std
+deepseek-chat,20,2.0,1.263157894736842,1.1239029738980326,10,2.2,1.7333333333333334,1.3165611772087666,10,1.8,0.8444444444444443,0.9189365834726814
