@@ -1,0 +1,31 @@
+# Local secrets
+.env
+config/.env
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# macOS / editor noise
+.DS_Store
+.vscode/
+
+# Local virtualenv
+.venv/
+
+# Runtime logs and generated outputs
+*.log
+logs/
+outputs/
+!outputs/.gitkeep
+
+# Matplotlib runtime cache
+.mplconfig/*
+!.mplconfig/.gitkeep
+
+# Local archives and temporary experiments
+tmp_*/
+
+# Literature PDFs can stay local; keep notes in Git
+docs/papers/*.pdf

@@ -1,0 +1,22 @@
+{
+  "family_pairs": [
+    {
+      "pair_id": "deepseek_chat_vs_reasoner",
+      "family": "deepseek",
+      "model_a": "deepseek-chat",
+      "model_b": "deepseek-reasoner"
+    },
+    {
+      "pair_id": "qwen_max_vs_qwen3_max",
+      "family": "qwen",
+      "model_a": "qwen-max",
+      "model_b": "qwen3-max"
+    },
+    {
+      "pair_id": "kimi_general_vs_thinking",
+      "family": "kimi",
+      "model_a": "kimi-k2-0905-preview",
+      "model_b": "kimi-k2.5"
+    }
+  ]
+}

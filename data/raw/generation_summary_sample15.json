@@ -1,0 +1,16 @@
+{
+  "target_questions": 15,
+  "generated_questions": 0,
+  "unique_pool_size": 0,
+  "total_batches": 12,
+  "successful_batches": 0,
+  "failed_batches": 12,
+  "questions_per_request": 5,
+  "concurrency": 2,
+  "max_rounds": 6,
+  "temperature": 0.9,
+  "seed_topic": "moral dilemmas and business decisions",
+  "domain_hint": "business, ethics, compliance, workplace politics",
+  "output_file": "data\\raw\\expanded_sycophancy_database_sample15.jsonl",
+  "generated_at": "2026-03-05T17:22:28.092052"
+}
