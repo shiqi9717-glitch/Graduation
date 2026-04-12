@@ -7,8 +7,23 @@ project_root = Path(__file__).resolve().parents[2]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.mitigation.interference_dataset import _extract_prompt_prefix, _label_strict
-from src.mitigation.interference_models import StructuredLogisticDetector, TextNGramNBDetector
+from src.mitigation.interference_dataset import (
+    _design_version_for_arm,
+    _extract_prompt_prefix,
+    _filter_by_design_version,
+    _is_hard_negative,
+    _label_strict,
+)
+from src.mitigation.interference_models import (
+    EmbeddingLogRegDetector,
+    HybridSentenceStructuredLogRegDetector,
+    SentenceEmbeddingLogRegDetector,
+    StructuredLogisticDetector,
+    TextNGramNBDetector,
+    TextTfidfLogRegDetector,
+    select_operating_points,
+    threshold_sweep,
+)
 
 
 def test_extract_prompt_prefix_separates_prefix_from_question():
@@ -105,3 +120,96 @@ def test_structured_and_text_detectors_fit_toy_data():
     text_model.fit(df, label_column="strict_label")
     text_scores = text_model.predict_proba(df)
     assert text_scores[1] > text_scores[0]
+
+    tfidf_model = TextTfidfLogRegDetector(max_features=128)
+    tfidf_model.fit(df, label_column="strict_label")
+    tfidf_scores = tfidf_model.predict_proba(df)
+    assert tfidf_scores[1] > tfidf_scores[0]
+
+    embedding_model = EmbeddingLogRegDetector(embedding_dim=32)
+    embedding_model.fit(df, label_column="strict_label")
+    embedding_scores = embedding_model.predict_proba(df)
+    assert embedding_scores[1] > embedding_scores[0]
+
+
+def test_structured_safe_excludes_leaky_posthoc_features():
+    safe_model = StructuredLogisticDetector(feature_mode=StructuredLogisticDetector.FEATURE_MODE_SAFE)
+    oracle_model = StructuredLogisticDetector(feature_mode=StructuredLogisticDetector.FEATURE_MODE_ORACLE)
+
+    for leaked in [
+        "answer_equals_wrong_option",
+        "answer_equals_ground_truth",
+        "answer_equals_baseline_answer",
+        "answer_changed_from_baseline",
+        "arm_correct_prob",
+        "arm_sycophancy_prob",
+        "arm_wrong_option_follow_prob",
+        "baseline_accuracy_prob",
+        "control_reference_accuracy_prob",
+    ]:
+        assert leaked not in safe_model.numeric_columns
+    assert "answer_equals_wrong_option" in oracle_model.numeric_columns
+    assert "arm_wrong_option_follow_prob" in oracle_model.numeric_columns
+
+
+def test_design_version_filter_prefers_new15_when_requested():
+    df = pd.DataFrame(
+        [
+            {"arm_id": "t3", "design_version": _design_version_for_arm("t3")},
+            {"arm_id": "ctrl_base", "design_version": _design_version_for_arm("ctrl_base")},
+            {"arm_id": "a1_c1_w1", "design_version": _design_version_for_arm("a1_c1_w1")},
+        ]
+    )
+    filtered = _filter_by_design_version(df, "new15")
+    assert sorted(filtered["arm_id"].tolist()) == ["a1_c1_w1", "ctrl_base"]
+
+
+def test_hard_negative_flag_marks_resilient_wrong_option_case():
+    sample = {
+        "strict_label": 0,
+        "explicit_wrong_option": 1,
+        "is_control": 0,
+        "baseline_accuracy_prob": 1.0,
+        "control_reference_accuracy_prob": 1.0,
+        "answer_equals_wrong_option": 0,
+        "answer_equals_ground_truth": 1,
+        "arm_correct_prob": 1.0,
+    }
+    assert _is_hard_negative(sample) == 1
+
+
+def test_threshold_sweep_and_operating_points_return_multiple_views():
+    sweep_df = threshold_sweep([0, 0, 1, 1], [0.1, 0.35, 0.7, 0.9], thresholds=[0.2, 0.5, 0.8])
+    ops = select_operating_points(sweep_df)
+    assert {"threshold", "precision", "recall", "f1", "trigger_rate"}.issubset(sweep_df.columns)
+    assert 0.2 <= ops["best_f1_threshold"] <= 0.8
+    assert 0.2 <= ops["high_precision_threshold"] <= 0.8
+    assert 0.2 <= ops["high_recall_threshold"] <= 0.8
+    assert 0.2 <= ops["aggressive_threshold"] <= 0.8
+    assert 0.2 <= ops["matched_trigger_budget_threshold"] <= 0.8
+    assert 0.2 <= ops["recall_constrained_threshold"] <= 0.8
+
+
+def test_sentence_embedding_detector_artifact_roundtrip_without_loading_encoder():
+    model = SentenceEmbeddingLogRegDetector(model_name="demo-model", batch_size=7)
+    model.embedding_dim = 3
+    model.params = {"const": -1.0, "sent_embed_0": 0.5}
+    artifact = model.to_artifact()
+    restored = SentenceEmbeddingLogRegDetector.from_artifact(artifact)
+    assert restored.model_name == "demo-model"
+    assert restored.batch_size == 7
+    assert restored.embedding_dim == 3
+    assert restored.params["sent_embed_0"] == 0.5
+
+
+def test_hybrid_sentence_structured_artifact_roundtrip_without_loading_encoder():
+    model = HybridSentenceStructuredLogRegDetector(model_name="demo-model", batch_size=5)
+    model.embedding_dim = 3
+    model.structured_feature_columns = ["structured_authority_level"]
+    model.params = {"const": -1.0, "sent_embed_0": 0.5, "structured_authority_level": 0.2}
+    artifact = model.to_artifact()
+    restored = HybridSentenceStructuredLogRegDetector.from_artifact(artifact)
+    assert restored.model_name == "demo-model"
+    assert restored.batch_size == 5
+    assert restored.structured_feature_columns == ["structured_authority_level"]
+    assert restored.params["structured_authority_level"] == 0.2

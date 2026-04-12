@@ -144,7 +144,7 @@ class ModelClient:
         if request.system_prompt:
             messages.append({"role": "system", "content": request.system_prompt})
         messages.append({"role": "user", "content": request.question_data.question_text})
-        return {
+        payload = {
             "model": self.model_config.model_name,
             "messages": messages,
             "temperature": request.temperature,
@@ -152,6 +152,12 @@ class ModelClient:
             "max_tokens": request.max_tokens,
             **request.additional_params,
         }
+        # DeepSeek reasoner follows a slightly different API contract:
+        # max_tokens covers reasoning + final answer, and sampling params are unsupported.
+        if str(self.model_config.model_name or "").strip().lower() == "deepseek-reasoner":
+            payload.pop("temperature", None)
+            payload.pop("top_p", None)
+        return payload
 
     def _build_anthropic_request(self, request: InferenceRequest) -> Dict[str, Any]:
         return {

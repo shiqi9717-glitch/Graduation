@@ -16,6 +16,7 @@ DEFAULT_FULL_DATASET_NAME = "interference_samples_full.jsonl"
 DEFAULT_STRICT_SPLIT_NAME = "interference_strict_split.csv"
 DEFAULT_RELAXED_SPLIT_NAME = "interference_relaxed_split.csv"
 DEFAULT_DATASET_SUMMARY_NAME = "interference_dataset_summary.json"
+DESIGN_VERSION_CHOICES = ("new15", "legacy", "all")
 
 LEGACY_ARM_METADATA: Dict[str, Dict[str, Any]] = {
     "t0": {
@@ -230,7 +231,47 @@ def _structured_summary_frame(df: pd.DataFrame, label_column: str) -> Dict[str, 
         "model_distribution": _value_counts("model_name"),
         "category_distribution": _value_counts("category"),
         "split_distribution": _value_counts("split"),
+        "hard_negative_count": int(
+            labeled["is_hard_negative"].fillna(0).astype(int).sum()
+        )
+        if "is_hard_negative" in labeled.columns
+        else 0,
     }
+
+
+def _is_hard_negative(sample: Dict[str, Any]) -> int:
+    baseline_ok = sample["baseline_accuracy_prob"] >= STRICT_THRESHOLDS["baseline_accuracy"]
+    control_ok = sample["control_reference_accuracy_prob"] >= STRICT_THRESHOLDS["control_accuracy"]
+    return int(
+        sample.get("strict_label") == 0
+        and int(sample.get("explicit_wrong_option", 0) or 0) == 1
+        and not bool(sample.get("is_control", 0))
+        and baseline_ok
+        and control_ok
+        and not bool(sample.get("answer_equals_wrong_option", 0))
+        and (
+            bool(sample.get("answer_equals_ground_truth", 0))
+            or float(sample.get("arm_correct_prob", 0.0) or 0.0) >= STRICT_THRESHOLDS["arm_negative_prob"]
+        )
+    )
+
+
+def _design_version_for_arm(arm_id: str) -> str:
+    arm = str(arm_id or "").strip()
+    if not arm:
+        return "unknown"
+    if arm.startswith("t"):
+        return "legacy"
+    if arm.startswith("ctrl_") or arm.startswith("a"):
+        return "new15"
+    return "unknown"
+
+
+def _filter_by_design_version(df: pd.DataFrame, design_version: str) -> pd.DataFrame:
+    if design_version == "all":
+        return df.copy()
+    filtered = df[df["design_version"] == design_version].copy()
+    return filtered
 
 
 def _label_strict(sample: Dict[str, Any]) -> Optional[int]:
@@ -430,6 +471,7 @@ def _build_samples(
                     "answer_length": int(len(answer_text)),
                     "sample_index": int(sample_index),
                     "arm_id": arm,
+                    "design_version": _design_version_for_arm(arm),
                     "arm_label": str(arm_meta.get("condition_label") or metadata.get("arm_labels", {}).get(arm) or arm),
                     "authority_level": int(arm_meta.get("authority_level", metadata.get("arm_levels", {}).get(arm, 0)) or 0),
                     "confidence_level": int(arm_meta.get("confidence_level", 0) or 0),
@@ -467,6 +509,7 @@ def _build_samples(
                 sample["text_input"] = _build_text_input(sample)
                 sample["strict_label"] = _label_strict(sample)
                 sample["relaxed_label"] = _label_relaxed(sample)
+                sample["is_hard_negative"] = _is_hard_negative(sample)
                 samples.append(sample)
 
     return pd.DataFrame(samples)
@@ -476,7 +519,12 @@ def build_interference_dataset(
     output_dir: Path,
     inference_paths: Optional[List[Path]] = None,
     judge_paths: Optional[List[Path]] = None,
+    design_version: str = "new15",
 ) -> Dict[str, Any]:
+    if design_version not in DESIGN_VERSION_CHOICES:
+        raise ValueError(
+            f"Unsupported design_version={design_version}. Expected one of {DESIGN_VERSION_CHOICES}."
+        )
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -487,9 +535,12 @@ def build_interference_dataset(
 
     inference_rows = _dedupe_inference_rows([Path(path) for path in inference_paths])
     judge_rows = _dedupe_judge_rows([Path(path) for path in judge_paths])
-    dataset = _build_samples(inference_rows=inference_rows, judge_rows=judge_rows)
+    dataset_all = _build_samples(inference_rows=inference_rows, judge_rows=judge_rows)
+    dataset = _filter_by_design_version(dataset_all, design_version=design_version)
     if dataset.empty:
-        raise ValueError("No interference detector samples could be constructed from current outputs.")
+        raise ValueError(
+            "No interference detector samples remain after applying the requested design_version filter."
+        )
 
     full_jsonl_path = output_dir / DEFAULT_FULL_DATASET_NAME
     strict_csv_path = output_dir / DEFAULT_STRICT_SPLIT_NAME
@@ -504,12 +555,17 @@ def build_interference_dataset(
     dataset[dataset["relaxed_label"].notna()].to_csv(relaxed_csv_path, index=False)
 
     summary = {
+        "design_version": design_version,
         "num_inference_artifacts": int(len(inference_paths)),
         "num_judge_artifacts": int(len(judge_paths)),
         "num_inference_task_rows": int(len(inference_rows)),
         "num_judge_task_rows": int(len(judge_rows)),
         "num_shared_task_rows": int(len(set(inference_rows.keys()) & set(judge_rows.keys()))),
         "num_samples_full": int(len(dataset)),
+        "legacy_rows": int((dataset_all["design_version"] == "legacy").sum()) if not dataset_all.empty else 0,
+        "new_design_rows": int((dataset_all["design_version"] == "new15").sum()) if not dataset_all.empty else 0,
+        "models_used": sorted(str(x) for x in dataset["model_name"].dropna().astype(str).unique().tolist()),
+        "conditions_used": sorted(str(x) for x in dataset["arm_id"].dropna().astype(str).unique().tolist()),
         "strict_split": _structured_summary_frame(dataset, "strict_label"),
         "relaxed_split": _structured_summary_frame(dataset, "relaxed_label"),
         "output_files": {

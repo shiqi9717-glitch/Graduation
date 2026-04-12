@@ -24,6 +24,10 @@ project-root/
 │   └── external/
 ├── docs/
 ├── outputs/
+│   ├── experiments/
+│   ├── logs/
+│   ├── smoke/
+│   └── archives/
 ├── scripts/
 ├── src/
 ├── tests/
@@ -32,6 +36,7 @@ project-root/
 
 ## 开发维护说明
 - 分析模块入口说明：`docs/ENTRYPOINT_GUIDE.md`
+- 文件查找规则说明：`docs/WORKSPACE_LOOKUP_RULES.md`
 
 ## 环境准备
 1. 创建虚拟环境并安装依赖
