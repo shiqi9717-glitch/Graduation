@@ -21,6 +21,20 @@ from .interference_models import (
     select_operating_points,
     threshold_sweep,
 )
+from .recheck_gate import (
+    CHANGE_GATE_CHOICES,
+    ChangeGateConfig,
+    apply_change_gate,
+    resolve_change_gate_config,
+)
+from .trigger_policy import (
+    REASONER_MODEL_NAME,
+    TRIGGER_POLICY_CHOICES,
+    TriggerPolicyConfig,
+    apply_trigger_policy,
+    resolve_trigger_policy_config,
+    trigger_threshold_series,
+)
 
 __all__ = [
     "DEFAULT_DATASET_SUMMARY_NAME",
@@ -40,4 +54,14 @@ __all__ = [
     "save_detector",
     "select_operating_points",
     "threshold_sweep",
+    "CHANGE_GATE_CHOICES",
+    "ChangeGateConfig",
+    "apply_change_gate",
+    "resolve_change_gate_config",
+    "REASONER_MODEL_NAME",
+    "TRIGGER_POLICY_CHOICES",
+    "TriggerPolicyConfig",
+    "apply_trigger_policy",
+    "resolve_trigger_policy_config",
+    "trigger_threshold_series",
 ]

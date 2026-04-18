@@ -16,12 +16,21 @@ sys.path.insert(0, str(project_root))
 
 from src.logging_config import setup_logger
 from src.mitigation import (
+    CHANGE_GATE_CHOICES,
     DEFAULT_DATASET_SUMMARY_NAME,
     DEFAULT_FULL_DATASET_NAME,
     DESIGN_VERSION_CHOICES,
+    REASONER_MODEL_NAME,
+    TRIGGER_POLICY_CHOICES,
+    ChangeGateConfig,
+    TriggerPolicyConfig,
+    apply_change_gate,
+    apply_trigger_policy,
     build_interference_dataset,
     evaluate_predictions,
     load_detector,
+    resolve_change_gate_config,
+    resolve_trigger_policy_config,
     save_detector,
 )
 from src.mitigation.interference_models import (
@@ -43,6 +52,18 @@ def _normalize_output_path(raw_path: str) -> Path:
     if path.parts and path.parts[0] == "outputs":
         return Path("outputs/experiments").joinpath(*path.parts[1:])
     return path
+
+
+def _numeric_series(df: pd.DataFrame, column: str, default: float = 0.0) -> pd.Series:
+    if column not in df.columns:
+        return pd.Series([default] * len(df), index=df.index, dtype="float64")
+    return pd.to_numeric(df[column], errors="coerce").fillna(default)
+
+
+def _text_series(df: pd.DataFrame, column: str) -> pd.Series:
+    if column not in df.columns:
+        return pd.Series([""] * len(df), index=df.index, dtype="object")
+    return df[column].fillna("").astype(str)
 
 
 def _read_dataset(path: Path) -> pd.DataFrame:
@@ -220,6 +241,29 @@ def _resolve_recommended_threshold(operating_points: Dict[str, float], policy: s
     raise KeyError(f"Threshold policy not found in operating points: {policy}")
 
 
+def _resolve_trigger_policy(
+    trigger_policy: str,
+    default_threshold: float,
+    reasoner_threshold: float,
+) -> TriggerPolicyConfig:
+    return resolve_trigger_policy_config(
+        policy_name=str(trigger_policy),
+        default_threshold=float(default_threshold),
+        reasoner_threshold=float(reasoner_threshold),
+    )
+
+
+def _resolve_change_gate(gate_name: str) -> ChangeGateConfig:
+    return resolve_change_gate_config(gate_name)
+
+
+def _trigger_series(
+    df: pd.DataFrame,
+    policy_config: TriggerPolicyConfig,
+) -> pd.Series:
+    return apply_trigger_policy(df, policy_config)
+
+
 def _select_eval_split(df: pd.DataFrame) -> str:
     for split in ("dev", "test", "train"):
         if not df[df["split"] == split].empty:
@@ -284,7 +328,8 @@ def _comparison_rows_for_thresholds(
 
 def _guard_metrics_for_threshold(
     dataset: pd.DataFrame,
-    threshold: float,
+    policy_config: TriggerPolicyConfig,
+    change_gate_config: ChangeGateConfig,
     threshold_name: str,
     recheck_source: str,
     model_kind: str,
@@ -292,36 +337,71 @@ def _guard_metrics_for_threshold(
     working = dataset.copy()
     working["raw_answer"] = working["predicted_answer"].fillna("").astype(str).str.strip().str.upper()
     working["recheck_answer"] = working[recheck_source].fillna("").astype(str).str.strip().str.upper()
-    working["trigger_recheck"] = (
-        working["interference_score"].astype(float) >= float(threshold)
-    ).astype(int)
-    working["final_answer"] = working["raw_answer"]
-    trigger_mask = working["trigger_recheck"].astype(int) == 1
-    valid_recheck_mask = trigger_mask & working["recheck_answer"].astype(bool)
-    working.loc[valid_recheck_mask, "final_answer"] = working.loc[valid_recheck_mask, "recheck_answer"]
+    working["trigger_recheck"] = _trigger_series(working, policy_config)
+    working["triggered"] = working["trigger_recheck"].astype(int)
     working["raw_correct"] = (
         working["raw_answer"].astype(str).str.upper() == working["ground_truth"].fillna("").astype(str).str.upper()
-    ).astype(int)
-    working["final_correct"] = (
-        working["final_answer"].astype(str).str.upper() == working["ground_truth"].fillna("").astype(str).str.upper()
     ).astype(int)
     working["raw_wrong_follow"] = (
         working["raw_answer"].astype(str).str.upper() == working["wrong_option"].fillna("").astype(str).str.upper()
     ).astype(int)
+    working = apply_change_gate(working, change_gate_config, policy_config)
+    working["final_answer"] = _text_series(working, "final_answer_after_gate").str.upper().str.strip()
+    working["final_correct"] = (
+        working["final_answer"].astype(str).str.upper() == working["ground_truth"].fillna("").astype(str).str.upper()
+    ).astype(int)
     working["final_wrong_follow"] = (
         working["final_answer"].astype(str).str.upper() == working["wrong_option"].fillna("").astype(str).str.upper()
     ).astype(int)
+    working["changed_to_correct"] = (
+        working["allow_answer_override"].astype(int).eq(1)
+        & (working["final_correct"].astype(int) == 1)
+    ).astype(int)
+    working["changed_to_wrong"] = (
+        working["allow_answer_override"].astype(int).eq(1)
+        & (working["final_correct"].astype(int) == 0)
+    ).astype(int)
+    working["correct_to_wrong"] = (
+        (working["raw_correct"].astype(int) == 1)
+        & (working["final_correct"].astype(int) == 0)
+        & working["allow_answer_override"].astype(int).eq(1)
+    ).astype(int)
     w1_rows = working[pd.to_numeric(working.get("explicit_wrong_option", 0), errors="coerce").fillna(0).astype(int) == 1]
+    reasoner_rows = working[_text_series(working, "model_name").str.strip().str.lower() == REASONER_MODEL_NAME].copy()
+    reasoner_triggered = reasoner_rows[reasoner_rows["trigger_recheck"].astype(int) == 1].copy()
+    by_model_rows = []
+    for model_name, model_df in working.groupby(_text_series(working, "model_name"), dropna=False):
+        if not str(model_name).strip():
+            continue
+        by_model_rows.append(
+            {
+                "model_name": str(model_name),
+                "n": int(len(model_df)),
+                "raw_accuracy": float(model_df["raw_correct"].mean()),
+                "guarded_accuracy": float(model_df["final_correct"].mean()),
+                "raw_wrong_option_follow_rate": float(model_df["raw_wrong_follow"].mean()),
+                "guarded_wrong_option_follow_rate": float(model_df["final_wrong_follow"].mean()),
+                "trigger_rate": float(model_df["trigger_recheck"].mean()),
+                "changed_to_correct_rate": float(model_df["changed_to_correct"].mean()),
+                "correct_to_wrong_rate": float(model_df["correct_to_wrong"].mean()),
+            }
+        )
     return {
         "model_kind": model_kind,
+        "trigger_policy": str(policy_config.policy_name),
+        "change_gate": str(change_gate_config.gate_name),
         "threshold_name": threshold_name,
-        "threshold": float(threshold),
+        "threshold": float(policy_config.default_threshold),
+        "default_threshold": float(policy_config.default_threshold),
+        "reasoner_threshold": float(policy_config.reasoner_threshold),
         "raw_accuracy": float(working["raw_correct"].mean()),
         "guarded_accuracy": float(working["final_correct"].mean()),
         "raw_wrong_option_follow_rate": float(working["raw_wrong_follow"].mean()),
         "guarded_wrong_option_follow_rate": float(working["final_wrong_follow"].mean()),
         "trigger_rate": float(working["trigger_recheck"].mean()),
         "avg_extra_calls": float(working["trigger_recheck"].mean()),
+        "changed_to_correct_rate": float(working["changed_to_correct"].mean()),
+        "correct_to_wrong_rate": float(working["correct_to_wrong"].mean()),
         "strict_positive_recall": float(
             working.loc[working["strict_label"].fillna(-1).astype(int) == 1, "trigger_recheck"].mean()
         )
@@ -333,6 +413,21 @@ def _guard_metrics_for_threshold(
         if "strict_label" in working.columns and (working["strict_label"].fillna(-1).astype(int) == 0).any()
         else 0.0,
         "w1_trigger_rate": float(w1_rows["trigger_recheck"].mean()) if not w1_rows.empty else 0.0,
+        "reasoner_n": int(len(reasoner_rows)),
+        "reasoner_trigger_rate": float(reasoner_rows["trigger_recheck"].mean()) if not reasoner_rows.empty else 0.0,
+        "reasoner_raw_accuracy": float(reasoner_rows["raw_correct"].mean()) if not reasoner_rows.empty else 0.0,
+        "reasoner_guarded_accuracy": float(reasoner_rows["final_correct"].mean()) if not reasoner_rows.empty else 0.0,
+        "reasoner_changed_to_correct_rate": float(reasoner_triggered["changed_to_correct"].mean()) if not reasoner_triggered.empty else 0.0,
+        "reasoner_changed_to_wrong_rate": float(reasoner_triggered["changed_to_wrong"].mean()) if not reasoner_triggered.empty else 0.0,
+        "reasoner_correct_to_wrong_rate": float(reasoner_rows["correct_to_wrong"].mean()) if not reasoner_rows.empty else 0.0,
+        "reasoner_net_gain": (
+            float(reasoner_rows["final_correct"].mean()) - float(reasoner_rows["raw_correct"].mean())
+        )
+        if not reasoner_rows.empty
+        else 0.0,
+        "reasoner_raw_wrong_option_follow_rate": float(reasoner_rows["raw_wrong_follow"].mean()) if not reasoner_rows.empty else 0.0,
+        "reasoner_guarded_wrong_option_follow_rate": float(reasoner_rows["final_wrong_follow"].mean()) if not reasoner_rows.empty else 0.0,
+        "by_model": by_model_rows,
     }
 
 
@@ -366,10 +461,52 @@ def _is_high_pressure_wrong_option_row(row: pd.Series) -> bool:
     return explicit_wrong and not is_control and authority >= 1 and confidence >= 1
 
 
-def _trigger_series(df: pd.DataFrame, threshold: float) -> pd.Series:
-    if "trigger_recheck" in df.columns:
-        return pd.to_numeric(df["trigger_recheck"], errors="coerce").fillna(0).astype(int)
-    return (pd.to_numeric(df["interference_score"], errors="coerce").fillna(0.0) >= float(threshold)).astype(int)
+def _reasoner_subset_summary(working: pd.DataFrame, trigger_column: str = "trigger_recheck") -> Dict[str, Any]:
+    reasoner_rows = working[_text_series(working, "model_name").str.strip().str.lower() == REASONER_MODEL_NAME].copy()
+    if reasoner_rows.empty:
+        return {
+            "reasoner_n": 0,
+            "reasoner_trigger_rate": 0.0,
+            "reasoner_raw_accuracy": 0.0,
+            "reasoner_guarded_accuracy": 0.0,
+            "reasoner_changed_to_correct_rate": 0.0,
+            "reasoner_changed_to_wrong_rate": 0.0,
+            "reasoner_net_gain": 0.0,
+            "reasoner_raw_wrong_option_follow_rate": 0.0,
+            "reasoner_guarded_wrong_option_follow_rate": 0.0,
+        }
+    if "raw_correct" not in reasoner_rows.columns:
+        reasoner_rows["raw_correct"] = (
+            _text_series(reasoner_rows, "predicted_answer").str.upper().str.strip()
+            == _text_series(reasoner_rows, "ground_truth").str.upper().str.strip()
+        ).astype(int)
+    if "final_correct" not in reasoner_rows.columns:
+        reasoner_rows["final_correct"] = _numeric_series(reasoner_rows, "raw_correct", 0).astype(int)
+    if "raw_wrong_follow" not in reasoner_rows.columns:
+        reasoner_rows["raw_wrong_follow"] = (
+            _text_series(reasoner_rows, "predicted_answer").str.upper().str.strip()
+            == _text_series(reasoner_rows, "wrong_option").str.upper().str.strip()
+        ).astype(int)
+    if "final_wrong_follow" not in reasoner_rows.columns:
+        reasoner_rows["final_wrong_follow"] = _numeric_series(reasoner_rows, "raw_wrong_follow", 0).astype(int)
+    if "changed_to_correct" not in reasoner_rows.columns:
+        reasoner_rows["changed_to_correct"] = 0
+    if "changed_to_wrong" not in reasoner_rows.columns:
+        reasoner_rows["changed_to_wrong"] = 0
+    triggered = reasoner_rows[reasoner_rows[trigger_column].astype(int) == 1].copy()
+    raw_acc = float(reasoner_rows["raw_correct"].mean())
+    guarded_acc = float(reasoner_rows["final_correct"].mean())
+    return {
+        "reasoner_n": int(len(reasoner_rows)),
+        "reasoner_trigger_rate": float(reasoner_rows[trigger_column].mean()),
+        "reasoner_raw_accuracy": raw_acc,
+        "reasoner_guarded_accuracy": guarded_acc,
+        "reasoner_changed_to_correct_rate": float(triggered["changed_to_correct"].mean()) if not triggered.empty else 0.0,
+        "reasoner_changed_to_wrong_rate": float(triggered["changed_to_wrong"].mean()) if not triggered.empty else 0.0,
+        "reasoner_net_gain": guarded_acc - raw_acc,
+        "reasoner_raw_wrong_option_follow_rate": float(reasoner_rows["raw_wrong_follow"].mean()),
+        "reasoner_guarded_wrong_option_follow_rate": float(reasoner_rows["final_wrong_follow"].mean()),
+    }
 
 
 def _summarize_split_dataset(df: pd.DataFrame, label_column: str) -> Dict[str, Any]:
@@ -392,13 +529,26 @@ def _summarize_split_dataset(df: pd.DataFrame, label_column: str) -> Dict[str, A
 
 def _summarize_scored_dataset(
     scored_df: pd.DataFrame,
-    threshold: float,
     label_column: str,
+    policy_config: TriggerPolicyConfig | None = None,
+    threshold: float | None = None,
 ) -> Dict[str, Any]:
+    if policy_config is None:
+        policy_config = _resolve_trigger_policy(
+            trigger_policy="global",
+            default_threshold=float(0.5 if threshold is None else threshold),
+            reasoner_threshold=0.70,
+        )
     if scored_df.empty:
-        return {"num_rows": 0, "threshold": float(threshold)}
+        return {
+            "num_rows": 0,
+            "trigger_policy": str(policy_config.policy_name),
+            "threshold": float(policy_config.default_threshold),
+            "default_threshold": float(policy_config.default_threshold),
+            "reasoner_threshold": float(policy_config.reasoner_threshold),
+        }
     working = scored_df.copy()
-    working["trigger_recheck"] = _trigger_series(working, threshold)
+    working["trigger_recheck"] = _trigger_series(working, policy_config)
     working["high_pressure_wrong_option"] = working.apply(_is_high_pressure_wrong_option_row, axis=1).astype(int)
     strict_positive = working[pd.to_numeric(working.get(label_column, -1), errors="coerce").fillna(-1).astype(int) == 1]
     strict_negative = working[pd.to_numeric(working.get(label_column, -1), errors="coerce").fillna(-1).astype(int) == 0]
@@ -411,7 +561,7 @@ def _summarize_scored_dataset(
         split_df = working[working.get("split", pd.Series("", index=working.index)).astype(str) == split_name].copy()
         if split_df.empty:
             continue
-        split_trigger = _trigger_series(split_df, threshold)
+        split_trigger = _trigger_series(split_df, policy_config)
         split_rows.append(
             {
                 "split": split_name,
@@ -435,7 +585,10 @@ def _summarize_scored_dataset(
         )
     return {
         "num_rows": int(len(working)),
-        "threshold": float(threshold),
+        "trigger_policy": str(policy_config.policy_name),
+        "threshold": float(policy_config.default_threshold),
+        "default_threshold": float(policy_config.default_threshold),
+        "reasoner_threshold": float(policy_config.reasoner_threshold),
         "overall_trigger_rate": float(working["trigger_recheck"].mean()),
         "wrong_option_trigger_rate": float(wrong_option_rows["trigger_recheck"].mean()) if not wrong_option_rows.empty else 0.0,
         "high_pressure_wrong_option_trigger_rate": float(high_pressure_rows["trigger_recheck"].mean())
@@ -446,6 +599,7 @@ def _summarize_scored_dataset(
         if not strict_negative.empty
         else 0.0,
         "trigger_by_split": split_rows,
+        **_reasoner_subset_summary(working, trigger_column="trigger_recheck"),
     }
 
 
@@ -621,14 +775,19 @@ def score_command(args: argparse.Namespace) -> int:
     if dataset.empty:
         raise ValueError(f"Input dataset is empty: {args.dataset}")
     y_prob = detector.predict_proba(dataset)
-    threshold = (
+    default_threshold = (
         float(args.threshold)
         if args.threshold is not None
         else float(metadata.get("recommended_threshold", 0.5))
     )
+    policy_config = _resolve_trigger_policy(
+        trigger_policy=str(args.trigger_policy),
+        default_threshold=default_threshold,
+        reasoner_threshold=float(args.reasoner_threshold),
+    )
     dataset["interference_score"] = y_prob
-    dataset["predicted_label"] = (dataset["interference_score"] >= threshold).astype(int)
-    dataset["trigger_recheck"] = dataset["predicted_label"]
+    dataset["predicted_label"] = (dataset["interference_score"] >= float(default_threshold)).astype(int)
+    dataset["trigger_recheck"] = _trigger_series(dataset, policy_config)
 
     preferred_columns = [
         "task_id",
@@ -654,7 +813,8 @@ def score_command(args: argparse.Namespace) -> int:
         "model_path": str(Path(args.model_path).resolve()),
         "dataset_path": str(Path(args.dataset).resolve()),
         "output_file": str(output_path.resolve()),
-        "threshold": threshold,
+        "threshold": float(default_threshold),
+        "trigger_policy": policy_config.to_dict(),
         "trigger_rate": float(dataset["trigger_recheck"].mean()) if len(dataset) else 0.0,
         "num_rows": int(len(dataset)),
         "training_metadata": metadata,
@@ -665,7 +825,7 @@ def score_command(args: argparse.Namespace) -> int:
         summary["labeled_eval"] = evaluate_predictions(
             labeled[label_column].astype(int).tolist(),
             labeled["interference_score"].astype(float).tolist(),
-            threshold=threshold,
+            threshold=float(default_threshold),
         )
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
@@ -728,7 +888,12 @@ def guard_eval_command(args: argparse.Namespace) -> int:
     comparison_rows = [
         _guard_metrics_for_threshold(
             dataset=dataset,
-            threshold=threshold,
+            policy_config=_resolve_trigger_policy(
+                trigger_policy=str(args.trigger_policy),
+                default_threshold=float(threshold),
+                reasoner_threshold=float(args.reasoner_threshold),
+            ),
+            change_gate_config=_resolve_change_gate(str(args.change_gate)),
             threshold_name=threshold_name,
             recheck_source=recheck_source,
             model_kind=str(model_metadata.get("model_kind", args.model_kind or "unknown")),
@@ -749,6 +914,12 @@ def guard_eval_command(args: argparse.Namespace) -> int:
         "mode": "offline_selective_recheck_simulation",
         "dataset_path": str(Path(args.dataset).resolve()),
         "recheck_source": recheck_source,
+        "trigger_policy": _resolve_trigger_policy(
+            trigger_policy=str(args.trigger_policy),
+            default_threshold=float(next(iter(threshold_map.values()))) if threshold_map else 0.5,
+            reasoner_threshold=float(args.reasoner_threshold),
+        ).to_dict(),
+        "change_gate": _resolve_change_gate(str(args.change_gate)).to_dict(),
         "num_rows": int(len(dataset)),
         "comparison_csv": str(comparison_path.resolve()),
         "comparisons": comparison_rows,
@@ -820,13 +991,19 @@ def report_command(args: argparse.Namespace) -> int:
             "metrics": model_metadata.get("metrics", {}),
             "sampling_summary": model_metadata.get("sampling_summary", {}),
         }
+    policy_config = _resolve_trigger_policy(
+        trigger_policy=str(args.trigger_policy),
+        default_threshold=float(threshold),
+        reasoner_threshold=float(args.reasoner_threshold),
+    )
+    report["trigger_policy"] = policy_config.to_dict()
 
     scored_path = resolved["scored_dataset"]
     if isinstance(scored_path, Path) and scored_path.exists():
         scored_df = _read_dataset(scored_path)
         report["scored_summary"] = _summarize_scored_dataset(
             scored_df=scored_df,
-            threshold=threshold,
+            policy_config=policy_config,
             label_column="strict_label",
         )
 
@@ -947,7 +1124,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="outputs/experiments/interference_detector/scored_samples.csv",
         help="Where to write scored samples",
     )
-    score_cmd.add_argument("--threshold", type=float, default=None)
+    score_cmd.add_argument("--threshold", "--default-threshold", type=float, default=None)
+    score_cmd.add_argument("--trigger-policy", default="global", choices=TRIGGER_POLICY_CHOICES)
+    score_cmd.add_argument("--reasoner-threshold", type=float, default=0.70)
     score_cmd.set_defaults(func=score_command)
 
     guard_cmd = subparsers.add_parser(
@@ -967,8 +1146,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional JSON path to save the guard evaluation summary.",
     )
     guard_cmd.add_argument("--model-path", default="", help="Optional detector artifact to load threshold metadata from.")
-    guard_cmd.add_argument("--threshold", type=float, default=None, help="Explicit threshold for single-threshold guard evaluation.")
+    guard_cmd.add_argument("--threshold", "--default-threshold", type=float, default=None, help="Explicit default threshold for single-threshold guard evaluation.")
     guard_cmd.add_argument("--threshold-name", default="explicit", help="Name for the explicitly provided threshold.")
+    guard_cmd.add_argument("--trigger-policy", default="global", choices=TRIGGER_POLICY_CHOICES)
+    guard_cmd.add_argument("--reasoner-threshold", type=float, default=0.70)
+    guard_cmd.add_argument("--change-gate", default="none", choices=CHANGE_GATE_CHOICES)
     guard_cmd.add_argument(
         "--compare-thresholds",
         action="store_true",
@@ -1007,7 +1189,9 @@ def build_parser() -> argparse.ArgumentParser:
         default="matched_trigger_budget",
         help="Optional threshold row to highlight from guard eval comparison.",
     )
-    report_cmd.add_argument("--threshold", type=float, default=None, help="Optional explicit trigger threshold override.")
+    report_cmd.add_argument("--threshold", "--default-threshold", type=float, default=None, help="Optional explicit default trigger threshold override.")
+    report_cmd.add_argument("--trigger-policy", default="global", choices=TRIGGER_POLICY_CHOICES)
+    report_cmd.add_argument("--reasoner-threshold", type=float, default=0.70)
     report_cmd.add_argument(
         "--output-file",
         default="",
