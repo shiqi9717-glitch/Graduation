@@ -58,6 +58,36 @@ DEEPSEEK_MODEL=deepseek-chat
 
 如果你用 OpenAI/Anthropic/Qwen 等推理，也请同时配置对应的 key。
 
+## AI 协作规则
+
+这个仓库在 macOS 上有一个重要限制：
+
+- 任何依赖 `MPS` 的命令或代码路径，都不要由 AI 同事在 Codex 内直接运行。
+- AI 同事应该先写好一条可直接复制的终端命令，再由用户在普通 macOS Terminal 中执行。
+- 用户把终端输出贴回后，AI 同事再继续分析、改代码或给下一步命令。
+- 与 `MPS` 无关的任务，AI 同事可以继续在 Codex 内正常执行。
+
+必须交给用户在 Terminal 里执行的典型任务：
+
+- `torch.backends.mps.is_available()` 检查
+- `device="mps"` 的本地模型运行
+- Apple GPU 上的本地 white-box probe / hidden-state 提取
+- 一切依赖 `MPS` 成功与否的 smoke test 或正式实验
+
+可以继续由 AI 同事在 Codex 内执行的任务：
+
+- CPU fallback 路径验证
+- 代码修改
+- 与 `MPS` 无关的测试
+- 数据清理、结果重建、统计分析、报表生成
+- 日志检查、流程联调、分支/恢复逻辑验证
+
+如果 AI 同事不确定某个任务是否涉及 `MPS`，默认按下面流程处理：
+
+1. 不在 Codex 内直接运行
+2. 先给用户一条可复制的终端命令
+3. 等用户返回终端输出后再继续
+
 ## 运行方式总览
 
 ### 1) 一键全流程（推荐）
