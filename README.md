@@ -31,3 +31,22 @@ If an AI collaborator is unsure whether a task touches `MPS`, default to:
 1. do not run it inside Codex
 2. write a copy-paste terminal command for the user
 3. wait for the user's terminal output before proceeding
+
+## Multi-Department Workflow Rule
+
+This workspace is jointly maintained under a multi-department AI workflow.
+The canonical full rule lives in [docs/README.md](/Users/shiqi/code/graduation-project/docs/README.md).
+
+Always remember:
+
+- The workspace is handled by six roles: `Architecture`, `Code`, `Analysis`, `Innovation`, `Documentation`, and the `User` as dispatch hub.
+- AI departments must **not** communicate directly with each other.
+- All workflow handoff must go through the user.
+- Every department response should stay structured and concise.
+- Every department response must include a forwarding prompt for the next department.
+
+Default handoff pattern:
+
+1. User -> Department A
+2. Department A -> structured output
+3. User forwards to Department B

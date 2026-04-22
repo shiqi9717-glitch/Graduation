@@ -2,6 +2,11 @@
 
 更新时间：2026-04-13
 
+> 更新说明：本文件形成于 2026-04-17 严格重建之前。
+> 当前正式结果口径请优先改看
+> [`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`](/Users/shiqi/code/graduation-project/docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md)。
+> 下文保留为历史交接记录，不应再直接作为当前正式汇报主口径。
+
 本文档用于在新工作区 `/Users/shiqi/code/graduation-project` 下继续承接当前正式结果整理，并统一结果分析部门的主线口径。
 
 ## 1. 已核对的正式结果目录
@@ -174,4 +179,3 @@
    - same-model real pilot
 4. 后续若写论文主文或 rebuttal，建议把 detector 叙述固定为：
    `risk ranking + selective recheck trigger policy`
-

@@ -714,6 +714,66 @@ class LocalProbeRunner:
             "top_token_logits": self._top_token_logits(last_logits, self.config.top_k),
         }
 
+    def patch_final_token_residuals_multi(
+        self,
+        *,
+        prompt: str,
+        layer_patch_map: Dict[int, Any],
+        ground_truth: str,
+        wrong_option: str,
+    ) -> Dict[str, Any]:
+        self.load()
+        assert self._model is not None
+        _, decoder_layers, _, _ = self._resolve_model_parts()
+        encoded = self._encode_prompt(prompt)
+        option_token_map = self._option_token_id_map()
+
+        prepared: Dict[int, Any] = {}
+        for layer_index, patch_tensor in layer_patch_map.items():
+            tensor = patch_tensor
+            if isinstance(tensor, np.ndarray):
+                tensor = self._torch.from_numpy(tensor)
+            prepared[int(layer_index)] = tensor.to(device=self._device, dtype=self._resolve_dtype())
+
+        handles = []
+        for layer_index, patch_tensor in prepared.items():
+            layer = decoder_layers[int(layer_index)]
+
+            def make_hook(tensor):
+                def _hook(_module, _inputs, output):
+                    if isinstance(output, tuple):
+                        hidden_states = output[0]
+                        patched = hidden_states.clone()
+                        patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                        return (patched, *output[1:])
+                    patched = output.clone()
+                    patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                    return patched
+
+                return _hook
+
+            handles.append(layer.register_forward_hook(make_hook(patch_tensor)))
+
+        try:
+            outputs = self._forward(**encoded, output_hidden_states=False)
+        finally:
+            for handle in handles:
+                handle.remove()
+
+        last_logits = outputs.logits[0, -1, :].detach().float().cpu()
+        answer_logits = self._answer_logits_from_last_logits(last_logits, option_token_map)
+        correct_option = str(ground_truth or "").strip().upper()
+        wrong_option_norm = str(wrong_option or "").strip().upper()
+        return {
+            "patched_layers": sorted(int(layer_index) for layer_index in prepared),
+            "predicted_answer": max(answer_logits.items(), key=lambda item: item[1])[0],
+            "answer_logits": answer_logits,
+            "correct_option_logit": float(answer_logits.get(correct_option, float("nan"))),
+            "wrong_option_logit": float(answer_logits.get(wrong_option_norm, float("nan"))),
+            "correct_wrong_margin": float(answer_logits.get(correct_option, 0.0) - answer_logits.get(wrong_option_norm, 0.0)),
+            "top_token_logits": self._top_token_logits(last_logits, self.config.top_k),
+        }
+
     def patch_residual_positions(
         self,
         *,

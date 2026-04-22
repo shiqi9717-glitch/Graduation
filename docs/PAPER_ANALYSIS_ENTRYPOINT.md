@@ -50,18 +50,28 @@
 
 - 数据扰动与条件设计：`src/data/local_data_perturber.py`
 - detector / re-check 模块说明：`src/mitigation/README.md`
+- 当前结果交接主文档：`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`
 - detector 主线正式目录：`outputs/experiments/interference_detector_new15_full_sentence_embedding`
 - detector 主线摘要：`outputs/experiments/interference_detector_new15_full_sentence_embedding/guard_eval_summary_sentence_embedding_new15_full.json`
 - detector 主线阈值扫表：`outputs/experiments/interference_detector_new15_full_sentence_embedding/threshold_sweep_sentence-embedding-logreg_strict.csv`
 - detector grid 对照：`outputs/experiments/interference_detector_new15_full_detector_grid`
+- strict rebuilt full real recheck：`outputs/experiments/full_real_recheck_rebuilt/20260417_113758`
 - 固定模型真实 guarded pilot：`outputs/experiments/deepseek_guarded_pilot/20260412_011945`
-- same-model self-recheck pilot：`outputs/experiments/same_model_guarded_pilot/20260412_021656`
+- same-model self-recheck pilot（历史参考，不作为当前正式方案主口径）：`outputs/experiments/same_model_guarded_pilot/20260412_021656`
 
 这里建议后续写作时始终分开三类证据：
 
 - `offline proxy simulation`
-- `fixed-model real pilot`
-- `same-model real pilot`
+- `strict rebuilt real recheck summary`
+- `historical pilots / case studies`
+
+当前正式汇报时，应优先采用严格重建后的口径：
+
+- baseline accuracy = `0.991804`
+- 口径 B：全模型 detector + real recheck = `0.995951`
+- 口径 C：非 Reasoner detector + real recheck，Reasoner 不做 detector / 不做 recheck = `0.996346`
+
+因此，论文和汇报中不应再把 `same-model real pilot` 尤其是 Reasoner lane 直接写成当前主方案。
 
 ## 6. 下一阶段最值得推进的切口
 

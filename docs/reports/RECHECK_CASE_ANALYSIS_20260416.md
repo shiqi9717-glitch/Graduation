@@ -1,5 +1,10 @@
 # Recheck Case Analysis (2026-04-16)
 
+> 更新说明：本文件保留为 historical case analysis。
+> 当前正式汇报主口径请优先参考
+> [`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`](/Users/shiqi/code/graduation-project/docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md)。
+> 尤其是 `deepseek-reasoner` 的 same-model real recheck，现已不纳入正式方案。
+
 本文整理 `detector + same-model real recheck` 中最有代表性的案例，重点关注两类样本：
 
 1. 原本答错，recheck 改对
@@ -348,13 +353,14 @@ full real run 中一共 `29` 条 `correct -> wrong`，但只集中在 6 个 `tas
 
 ## 结论
 
-当前 `detector + same-model recheck` 的真实收益是成立的，但系统表现不是平均分布的：
+当前这份案例分析仍然有价值，但应只用于说明 same-model recheck 的失败模式与局部收益，不应直接升级为正式主线结论：
 
 - 正收益来自大量“被前缀错误选项锚定后纠回”的样本
 - 负收益主要集中在极少数题上的系统性误判
+- `deepseek-reasoner` 的问题已经不只是协议层，而是少数题上的高自信稳定误判
 
-最实用的研究结论是：
+因此更稳妥的用法是：
 
-1. `qwen-max` 最稳，可作为当前最可信的 same-model recheck 方案
-2. `deepseek-chat` 和 `qwen3-max` 有净收益，但需要警惕少数定义/概念题的稳定翻车
-3. `deepseek-reasoner` 已证明“能纠错”，但 full-run 中更需要单独 trigger policy，而不应像 chat 模型那样频繁触发
+1. 把 `qwen-max`、`deepseek-chat`、`qwen3-max` 的案例保留为 same-model recheck 风险画像
+2. 把 `deepseek-reasoner` 案例保留为“为什么 Reasoner lane 不进入当前正式方案”的证据
+3. 当前正式汇报不要再把 “same-model recheck 最可信方案” 当作主结论，正式主口径应回到严格重建后的 detector + real recheck 汇总
