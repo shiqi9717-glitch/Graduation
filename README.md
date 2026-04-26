@@ -39,7 +39,8 @@ The canonical full rule lives in [docs/README.md](/Users/shiqi/code/graduation-p
 
 Always remember:
 
-- The workspace is handled by six roles: `Architecture`, `Code`, `Analysis`, `Innovation`, `Documentation`, and the `User` as dispatch hub.
+- The workspace is handled by seven roles: `Architecture`, `Code`, `Analysis`, `Innovation`, `Documentation`, `Paper Writing`, and the `User` as dispatch hub.
+- `Paper Writing` only handles paper-writing tasks such as main-text drafting, appendix wording, narrative structure, and submission-language polishing. Work already owned by the other five AI departments should not be routed to `Paper Writing`.
 - AI departments must **not** communicate directly with each other.
 - All workflow handoff must go through the user.
 - Every department response should stay structured and concise.
