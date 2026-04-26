@@ -56,6 +56,16 @@
 - detector 主线阈值扫表：`outputs/experiments/interference_detector_new15_full_sentence_embedding/threshold_sweep_sentence-embedding-logreg_strict.csv`
 - detector grid 对照：`outputs/experiments/interference_detector_new15_full_detector_grid`
 - strict rebuilt full real recheck：`outputs/experiments/full_real_recheck_rebuilt/20260417_113758`
+- 7B intervention 主 baseline：`outputs/experiments/local_probe_qwen7b_intervention_main/baseline_24_26_s06/Qwen_Qwen2.5-7B-Instruct/20260423_140142`
+- 7B intervention aggressive secondary：`outputs/experiments/local_probe_qwen7b_intervention_main/aggressive_24_27_s06/Qwen_Qwen2.5-7B-Instruct/20260423_140518`
+- 7B intervention subtraction control：`outputs/experiments/local_probe_qwen7b_intervention_main/subtraction_control_24_26_s06/Qwen_Qwen2.5-7B-Instruct/20260423_140853`
+- 3B intervention 主 baseline：`outputs/experiments/local_probe_qwen3b_intervention_main/baseline_31_35_s06/Qwen_Qwen2.5-3B-Instruct/20260423_142847`
+- 3B intervention subtraction control：`outputs/experiments/local_probe_qwen3b_intervention_main/subtraction_control_31_35_s06/Qwen_Qwen2.5-3B-Instruct/20260423_142938`
+- belief_argument mechanistic 主线：`outputs/experiments/local_probe_qwen3b_mechanistic/...` 与 `outputs/experiments/local_probe_qwen7b_mechanistic_mps_fp32/...`
+- 14B belief causal transfer（主文 secondary causal confirmation）：`outputs/experiments/qwen14b_belief_causal_transfer/cf98f3b3bbb457ad9e2bb7baf9a0125b6b88caa8/20260424_221308`
+- GLM cross-family replication（positive replication with stronger tradeoff）：`outputs/experiments/pressure_subspace_damping_glm4_9b/Users_shiqi_.cache_huggingface_hub_models--zai-org--glm-4-9b-chat-hf_snapshots_8599336fc6c125203efb2360bfaf4c80eef1d1bf/20260426_005017`
+- Llama English bridge prompt retest（limitation / weak replication）：`outputs/experiments/llama31_8b_belief_causal_transfer_english_sweep/0e9e39f249a16976918f6564b8830bc894c89659/20260426_151011`
+- identity_profile white-box follow-up（弱支持观察，不作为正式副线）：`outputs/experiments/identity_profile_whitebox_followup_qwen7b/Qwen_Qwen2.5-7B-Instruct/20260424_120058`
 - 固定模型真实 guarded pilot：`outputs/experiments/deepseek_guarded_pilot/20260412_011945`
 - same-model self-recheck pilot（历史参考，不作为当前正式方案主口径）：`outputs/experiments/same_model_guarded_pilot/20260412_021656`
 
@@ -72,6 +82,82 @@
 - 口径 C：非 Reasoner detector + real recheck，Reasoner 不做 detector / 不做 recheck = `0.996346`
 
 因此，论文和汇报中不应再把 `same-model real pilot` 尤其是 Reasoner lane 直接写成当前主方案。
+
+如果涉及 local probe intervention，当前正式口径应固定为：
+
+- 3B 默认 baseline：`baseline_state_interpolation`, `31-35`, `0.6`
+- 7B 默认 baseline：`baseline_state_interpolation`, `24-26`, `0.6`
+- 7B `24-27, 0.6` 只保留为 `aggressive secondary setting`
+- `late_layer_residual_subtraction` 在 3B / 7B 主实验里都不适合作为正式 baseline
+
+推荐写入论文/汇报主结果的数字是：
+
+- 3B `strict_positive`: recovery `0.8125`, wrong-follow `0.10` (ref `0.48`), damage `0`, net `0.4194`
+- 3B `high_pressure_wrong_option`: recovery `0.5`, wrong-follow `0.24` (ref `0.42`), damage `0`, net `0.2381`
+- 7B `strict_positive`: recovery `0.5455`, wrong-follow `0.20` (ref `0.36`), damage `0`, net `0.1463`
+- 7B `high_pressure_wrong_option`: recovery `0.9`, wrong-follow `0.10` (ref `0.26`), damage `0`, net `0.2368`
+- 7B aggressive secondary `strict_positive`: recovery `0.7273`, wrong-follow `0.12`, net `0.1951`
+- 7B aggressive secondary `high_pressure_wrong_option`: recovery `0.8`, damage `0.0263`, net `0.1842`
+
+如果涉及 white-box mechanistic 子研究线，当前正式分级应固定为：
+
+- `belief_argument`：可保留为正式 mechanistic mitigation 结果
+- 14B belief causal transfer：只保留为主文中的 `secondary causal confirmation`
+- `identity_profile`：只保留为 `weakly supported mechanistic observation`
+
+关于 14B belief causal transfer，论文/汇报中应明确写：
+
+- `matched_belief_subspace_damping` 降低了 pressured-stage `stance_drift_rate` 与 `pressured_compliance_rate`
+- `matched_negative_control` 与 `no_intervention` 相同
+- 这支持 `belief_argument` 的 cross-source causal transfer
+- 但 `n = 24`、`recovery_rate` 未提升、`baseline_damage_rate = 0.0417`
+- 因此它只能作为小样本 secondary causal confirmation，不应写成新的 main mitigation result
+
+推荐主文/汇报只用一个小表或短段落呈现，不单开大节。
+
+关于 GLM 与 Llama 跨家族复测，当前正式区分应固定为：
+
+- GLM：`cross-family positive replication with stronger tradeoff`
+- Llama-3.1-8B English bridge prompt：`weak replication / limitation`
+
+GLM 可展开写为：
+
+> GLM reproduces the belief-subspace damping direction across model families, but with a substantially stronger utility/safety tradeoff than the Qwen line.
+
+关于 Llama，论文/汇报中应明确写：
+
+- 英文 prompt 下 belief subspace 更清晰，explained variance 约 `0.64-0.68`，abs coherence 约 `0.40-0.44`
+- 但 intervention transfer weak
+- 低 alpha 基本不降低 drift 或 compliance
+- `alpha = 0.5` 仅小幅降低 drift，从 `0.4583` 到 `0.375`
+- compliance 仍为 `1.0`
+- recovery 降至 `0.5833`
+- baseline damage = `0.25`
+- 最终定位为 `mechanism locatable, intervention transfer weak`
+
+Llama 结果应放入 limitation 或 appendix，不应写成 positive replication。
+
+关于 `identity_profile`，论文/汇报中应明确写：
+
+- localization 证据存在
+- causal intervention support 不足
+- 当前不能 claim `identity-specific mitigation`
+- 不升格为正式副线
+
+如果需要写后续可能的下一步，只建议保留：
+
+- 14B belief causal transfer：同配置扩样到 `n=48`
+- Llama：`projection-to-logit diagnostic`
+- Llama：`causal alignment diagnostic`
+- `prefix-span ablation + replay test`
+
+不建议把下面这些继续写成当前主线建议：
+
+- recovery-focused 新配置
+- 新的方法调参
+- Llama 常规 alpha / k / layer sweep
+- 多轮 alpha sweep
+- 多轮 control sweep
 
 ## 6. 下一阶段最值得推进的切口
 

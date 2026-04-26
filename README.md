@@ -43,10 +43,17 @@ Always remember:
 - AI departments must **not** communicate directly with each other.
 - All workflow handoff must go through the user.
 - Every department response should stay structured and concise.
-- Every department response must include a forwarding prompt for the next department.
+- Every department response must include a forwarding prompt with both source and target departments.
 
 Default handoff pattern:
 
 1. User -> Department A
 2. Department A -> structured output
 3. User forwards to Department B
+
+Forwarding prompts must use this pattern:
+
+```text
+【FROM: Department A】
+【TO: Department B】
+```

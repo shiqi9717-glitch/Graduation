@@ -1,0 +1,24 @@
+#!/bin/zsh
+set -euo pipefail
+
+cd /Users/shiqi/code/graduation-project
+mkdir -p .mplconfig
+
+echo "Starting pressure_subspace_damping: Qwen2.5-3B, layers=31-35"
+
+MPLCONFIGDIR=/Users/shiqi/code/graduation-project/.mplconfig \
+./.venv/bin/python scripts/run_pressure_subspace_damping.py \
+  --model-name Qwen/Qwen2.5-3B-Instruct \
+  --device mps \
+  --dtype float32 \
+  --layers 31-35 \
+  --output-root outputs/experiments/pressure_subspace_damping_qwen3b \
+  --items-per-stratum 48 \
+  --train-per-stratum 24 \
+  --seed 20260423 \
+  --k-values 1,2,4,8 \
+  --intervention-k-values 1,2,4 \
+  --alpha-values 0.25,0.5,0.75 \
+  --max-length 1024 \
+  --flush-every 12 \
+  --log-level INFO

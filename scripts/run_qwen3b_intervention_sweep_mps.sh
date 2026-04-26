@@ -12,6 +12,8 @@ mkdir -p .mplconfig
   --high-pressure-limit 50 \
   --control-limit 8
 
+echo "Starting 3B intervention sweep: 108 samples x 24 settings = 2592 patched evaluations"
+
 MPLCONFIGDIR=/Users/shiqi/code/graduation-project/.mplconfig \
 ./.venv/bin/python scripts/run_local_probe_intervention.py \
   --model-name Qwen/Qwen2.5-3B-Instruct \
@@ -26,4 +28,5 @@ MPLCONFIGDIR=/Users/shiqi/code/graduation-project/.mplconfig \
   --layer-configs '31-35=31,32,33,34,35;33-35=33,34,35;31+33+35=31,33,35' \
   --interpolation-scales 0.15,0.3,0.45,0.6 \
   --subtraction-scales 0.15,0.3,0.45,0.6 \
+  --flush-every 10 \
   --log-level INFO

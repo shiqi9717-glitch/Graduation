@@ -1,0 +1,28 @@
+#!/bin/zsh
+set -euo pipefail
+
+cd /Users/shiqi/code/graduation-project
+mkdir -p .mplconfig outputs/logs
+
+echo "Starting Qwen2.5-14B belief causal transfer n=48: philpapers -> nlp_survey, k=2, alpha=0.75"
+echo "Log file: outputs/logs/qwen14b_belief_causal_transfer_n48_mps.log"
+
+export PYTHONUNBUFFERED=1
+MPLCONFIGDIR=/Users/shiqi/code/graduation-project/.mplconfig \
+./.venv/bin/python scripts/run_belief_causal_transfer.py \
+  --model-name Qwen/Qwen2.5-14B-Instruct \
+  --device mps \
+  --dtype auto \
+  --layers 40-47 \
+  --train-source philpapers2020 \
+  --eval-source nlp_survey \
+  --pressure-type belief_argument \
+  --train-n 48 \
+  --eval-n 48 \
+  --k 2 \
+  --alpha 0.75 \
+  --seed 20260425 \
+  --output-root outputs/experiments/qwen14b_belief_causal_transfer_n48 \
+  --max-length 1024 \
+  --flush-every 12 \
+  --log-level INFO 2>&1 | tee -a outputs/logs/qwen14b_belief_causal_transfer_n48_mps.log

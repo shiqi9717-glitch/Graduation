@@ -88,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--interpolation-scale", type=float, default=0.5)
     parser.add_argument("--interpolation-scales", default="")
     parser.add_argument("--limit-samples", type=int, default=0)
+    parser.add_argument("--flush-every", type=int, default=20)
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     return parser
 
@@ -103,7 +104,7 @@ def _default_explicit_layers(model_name: str) -> tuple[int, ...]:
 
 def main() -> int:
     args = build_parser().parse_args()
-    setup_logger(name="local_probe_intervention", level=args.log_level)
+    logger = setup_logger(name="local_probe_intervention", level=args.log_level)
 
     sample_types = _parse_sample_types(args.sample_types)
     direction_sample_types = _parse_sample_types(args.direction_sample_types)
@@ -159,6 +160,13 @@ def main() -> int:
         samples = samples[: int(args.limit_samples)]
 
     output_dir = prepare_output_dir(Path(args.output_dir), run_name=sanitize_filename(args.model_name))
+    logger.info(
+        "Starting intervention run: model=%s samples=%d settings=%d output_dir=%s",
+        args.model_name,
+        len(samples),
+        len(specs),
+        output_dir,
+    )
     runner = LocalProbeRunner(
         LocalProbeConfig(
             model_name=str(args.model_name),
@@ -172,14 +180,42 @@ def main() -> int:
 
     records: list[dict] = []
     comparisons: list[dict] = []
-    for sample in samples:
+    total_tasks = len(samples) * len(specs)
+    completed_tasks = 0
+    completed_samples = 0
+
+    def _write_partial() -> None:
+        partial_summary = summarize_intervention_records(records) if records else {"num_records": 0}
+        partial_payload = {
+            "model_name": str(args.model_name),
+            "output_dir": str(output_dir.resolve()),
+            "num_samples": len(samples),
+            "completed_samples": completed_samples,
+            "num_settings": len(specs),
+            "completed_tasks": completed_tasks,
+            "total_tasks": total_tasks,
+            "intervention_summary": partial_summary,
+        }
+        save_jsonl(output_dir / "intervention_records.partial.jsonl", records)
+        save_jsonl(output_dir / "intervention_comparisons.partial.jsonl", comparisons)
+        save_json(output_dir / "intervention_run.partial.json", partial_payload)
+
+    for sample_index, sample in enumerate(samples, start=1):
         sample_id = str(sample["sample_id"])
+        logger.info(
+            "Running sample %d/%d: sample_id=%s sample_type=%s settings=%d",
+            sample_index,
+            len(samples),
+            sample_id,
+            sample.get("sample_type"),
+            len(specs),
+        )
         baseline_ref = scenario_record_map[(sample_id, "baseline")]
         interference_ref = scenario_record_map[(sample_id, "interference")]
         baseline_prompt = build_prompt(sample, "baseline")
         interference_prompt = build_prompt(sample, "interference")
 
-        for spec in specs:
+        for spec_index, spec in enumerate(specs, start=1):
             baseline_patch_map = build_layer_patch_map(
                 method=spec.method,
                 sample_id=sample_id,
@@ -279,6 +315,30 @@ def main() -> int:
                     "interference_intervened_margin": interference_intervened.get("correct_wrong_margin"),
                 }
             )
+            completed_tasks += 1
+            if completed_tasks == 1 or completed_tasks % max(int(args.flush_every), 1) == 0 or completed_tasks == total_tasks:
+                logger.info(
+                    "Task progress %d/%d: sample %d/%d setting %d/%d sample_id=%s method=%s layers=%s scale=%.3f",
+                    completed_tasks,
+                    total_tasks,
+                    sample_index,
+                    len(samples),
+                    spec_index,
+                    len(specs),
+                    sample_id,
+                    spec.method,
+                    spec.layer_config_name,
+                    spec.active_scale,
+                )
+                _write_partial()
+        completed_samples = sample_index
+        logger.info(
+            "Completed sample %d/%d: sample_id=%s",
+            completed_samples,
+            len(samples),
+            sample_id,
+        )
+        _write_partial()
 
     intervention_summary = summarize_intervention_records(records)
     run_payload = {
