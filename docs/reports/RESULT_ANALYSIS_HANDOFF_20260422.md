@@ -347,11 +347,13 @@ Llama 正式证据目录：
 
 1. [`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`](/Users/shiqi/code/graduation-project/docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md)
 2. [`docs/PAPER_ANALYSIS_ENTRYPOINT.md`](/Users/shiqi/code/graduation-project/docs/PAPER_ANALYSIS_ENTRYPOINT.md)
-3. [`docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md`](/Users/shiqi/code/graduation-project/docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md)
-4. detector 主线结果目录
-5. strict rebuilt full real recheck 目录
-6. local probe intervention 主实验目录
-7. white-box mechanistic 主线与 follow-up 目录
+3. [`docs/reports/WHITEBOX_MECHANISTIC_WORKSPACE_SUMMARY_20260426.md`](/Users/shiqi/code/graduation-project/docs/reports/WHITEBOX_MECHANISTIC_WORKSPACE_SUMMARY_20260426.md)
+4. [`docs/reports/WHITEBOX_MECHANISTIC_EVIDENCE_MATRIX_20260426.md`](/Users/shiqi/code/graduation-project/docs/reports/WHITEBOX_MECHANISTIC_EVIDENCE_MATRIX_20260426.md)
+5. [`docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md`](/Users/shiqi/code/graduation-project/docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md)
+6. detector 主线结果目录
+7. strict rebuilt full real recheck 目录
+8. local probe intervention 主实验目录
+9. white-box mechanistic 主线与 follow-up 目录
 
 ## 8. 后续整理建议
 
