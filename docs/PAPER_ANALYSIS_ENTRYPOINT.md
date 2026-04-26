@@ -15,10 +15,11 @@
 ## 2. 推荐阅读顺序
 
 1. `docs/PAPER_ANALYSIS_ENTRYPOINT.md`
-2. `docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md`
-3. `docs/papers/literature_summary.md`
-4. `docs/PROJECT_STATUS.md`
-5. `src/mitigation/README.md`
+2. `docs/papers/README.md`
+3. `docs/papers/RESEARCH_MEMO_DETECTOR_TO_PROCESS_PROXY.md`
+4. `docs/papers/literature_summary.md`
+5. `docs/PROJECT_STATUS.md`
+6. `src/mitigation/README.md`
 
 ## 3. 当前研究主张
 
@@ -50,6 +51,10 @@
 
 - 数据扰动与条件设计：`src/data/local_data_perturber.py`
 - detector / re-check 模块说明：`src/mitigation/README.md`
+- 论文写作产物索引：`docs/papers/README.md`
+- white-box 论文 skeleton：`docs/papers/WHITEBOX_MECHANISTIC_PAPER_SKELETON_20260426.md`
+- white-box Markdown 主文初稿：`docs/papers/WHITEBOX_MECHANISTIC_MAIN_DRAFT_20260426.md`
+- white-box LaTeX 主文初稿：`docs/papers/WHITEBOX_MECHANISTIC_MAIN_DRAFT_20260426.tex`（已通过 `pdflatex` 编译检查）
 - 当前结果交接主文档：`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`
 - white-box 机制线总览：`docs/reports/WHITEBOX_MECHANISTIC_WORKSPACE_SUMMARY_20260426.md`
 - white-box 主会证据矩阵：`docs/reports/WHITEBOX_MECHANISTIC_EVIDENCE_MATRIX_20260426.md`
