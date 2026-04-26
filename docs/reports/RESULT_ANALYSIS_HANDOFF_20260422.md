@@ -362,12 +362,16 @@ Llama 正式证据目录：
 - 7B `24-27, 0.6` 只能作为 aggressive secondary setting 引用，不应覆盖默认 baseline
 - `late_layer_residual_subtraction` 不应写成正式可用主方法
 - 如涉及 white-box mechanistic 叙述，请把 `belief_argument` 与 `identity_profile` 分开
+- 如涉及 white-box 主会表格，请优先引用 `outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452/whitebox_effect_size_table.csv`
+- Qwen 3B / 7B 的 `stance_drift` 与 `recovery` 是 objective-local proxy 口径，不要与 bridge causal lines 做完全同义的跨范式 leaderboard
 - 如涉及 14B belief causal transfer，请只把它写成 `secondary causal confirmation`，并放在主文小表或短段落里
 - 不要把 14B belief causal transfer 写成新的主结果节或“已建立强 mitigation”
 - 如需记录后续最小补实验，只保留“同配置扩样到 `n=48`”
 - 如涉及 GLM/Llama 跨家族复测，请区分 GLM 是 positive replication with stronger tradeoff，Llama 是 weak replication / limitation
 - Llama 英文 bridge prompt 复测只能放在 limitation 或 appendix，不能写成 positive replication
+- Llama limitation 可直接引用 `outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452/llama_limitation_summary.md`
 - Llama 后续只保留 `projection-to-logit diagnostic` 与 `causal alignment diagnostic`
+- 停止后续 Llama alpha / k / layer sweep
 - `identity_profile` 当前只能写成 weakly supported mechanistic observation，不能写成正式副线或 identity-specific mitigation
 - 如需记录后续补实验方向，只保留 `prefix-span ablation + replay test`
 - 如果文档仍引用 same-model self-recheck 作为“当前最可信正式方案”，应改为历史参考口径

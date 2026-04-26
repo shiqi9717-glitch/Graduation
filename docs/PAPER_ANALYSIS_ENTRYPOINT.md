@@ -53,6 +53,7 @@
 - 当前结果交接主文档：`docs/reports/RESULT_ANALYSIS_HANDOFF_20260422.md`
 - white-box 机制线总览：`docs/reports/WHITEBOX_MECHANISTIC_WORKSPACE_SUMMARY_20260426.md`
 - white-box 主会证据矩阵：`docs/reports/WHITEBOX_MECHANISTIC_EVIDENCE_MATRIX_20260426.md`
+- white-box statistical closure：`outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452`
 - detector 主线正式目录：`outputs/experiments/interference_detector_new15_full_sentence_embedding`
 - detector 主线摘要：`outputs/experiments/interference_detector_new15_full_sentence_embedding/guard_eval_summary_sentence_embedding_new15_full.json`
 - detector 主线阈值扫表：`outputs/experiments/interference_detector_new15_full_sentence_embedding/threshold_sweep_sentence-embedding-logreg_strict.csv`

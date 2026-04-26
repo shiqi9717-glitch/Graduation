@@ -4,6 +4,17 @@
 
 本文档整理当前工作区 `/Users/shiqi/code/graduation-project` 中 white-box mechanistic 相关流程、结果目录与正式汇报边界。本文只基于已有产物做文件整理与口径归纳；不在 Codex 内运行任何 MPS 依赖实验。
 
+统计收口目录：
+
+- `outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452`
+
+优先引用：
+
+- `whitebox_effect_size_table.csv`
+- `llama_limitation_summary.md`
+- `llama_limitation_summary.json`
+- `README.md`
+
 ## 1. 总体结论
 
 当前 white-box 机制线应分为四个证据层级：
@@ -16,6 +27,11 @@
 一句话汇报口径：
 
 > `belief_argument` 是当前可进入正式论文/汇报的 white-box mechanistic mitigation 主线；14B 与 GLM 提供有限但有价值的跨规模/跨家族支持；Llama 与 identity_profile 只能作为 limitation 或弱支持观察；Mistral-7B 只作为 appendix exploratory note；subtraction control 与若干探索性脚本不应写成可用主方法。
+
+统计口径边界：
+
+- Qwen 3B / 7B 的 `stance_drift` 与 `recovery` 是 objective-local proxy 口径。
+- 不要把 Qwen mainline 与 bridge causal lines 做完全同义的跨范式 leaderboard。
 
 ## 2. 核心流程
 
@@ -100,6 +116,7 @@ MPS 运行规则：
 
 - `strict_positive`: recovery `0.8125`, wrong-follow `0.10` (ref `0.48`), damage `0`, net `0.4194`
 - `high_pressure_wrong_option`: recovery `0.5`, wrong-follow `0.24` (ref `0.42`), damage `0`, net `0.2381`
+- statistical closure：stance drift delta `-0.1597` CI `[-0.2402, -0.0800]`, compliance delta `-0.2789` CI `[-0.3700, -0.1900]`, recovery delta `0.6906` CI `[0.5000, 0.8667]`, damage `0`
 
 7B 默认 baseline：
 
@@ -112,6 +129,7 @@ MPS 运行规则：
 
 - `strict_positive`: recovery `0.5455`, wrong-follow `0.20` (ref `0.36`), damage `0`, net `0.1463`
 - `high_pressure_wrong_option`: recovery `0.9`, wrong-follow `0.10` (ref `0.26`), damage `0`, net `0.2368`
+- statistical closure：stance drift delta `-0.1493` CI `[-0.2200, -0.0800]`, compliance delta `-0.1595` CI `[-0.2300, -0.0900]`, recovery delta `0.7127` CI `[0.5000, 0.9000]`, damage `0`
 
 7B aggressive secondary：
 
@@ -160,6 +178,7 @@ MPS 运行规则：
 - `no_intervention`: stance drift `0.5000`, compliance `0.9583`, recovery `0.7917`, damage `0`
 - `matched_belief_subspace_damping`: stance drift `0.2917`, compliance `0.7083`, recovery `0.7917`, damage `0.0417`
 - `matched_negative_control`: 与 `no_intervention` 相同
+- statistical closure：drift delta `-0.2068` CI `[-0.4167, 0.0000]`, compliance delta `-0.2484` CI `[-0.4167, -0.0833]`, recovery delta `0`, baseline damage `0.0416`
 
 边界：
 
@@ -186,6 +205,7 @@ MPS 运行规则：
 
 - 在 `philpapers_belief_argument_to_nlp_survey_belief_argument` transfer 中，alpha `0.75`、k `2` 将 drift 从 `0.4583` 降至 `0.1667`，compliance 从 `0.9583` 降至 `0.7500`，recovery 从 `0.5833` 升至 `0.9583`。
 - 同时 baseline damage 达到 `0.3333`，tradeoff 明显强于 Qwen。
+- statistical closure：drift delta `-0.2932` CI `[-0.5417, -0.0417]`, compliance delta `-0.2095` CI `[-0.4167, 0.0000]`, recovery delta `0.3769` CI `[0.1667, 0.5833]`, baseline damage `0.3325` CI `[0.1667, 0.5417]`
 
 整理结论：
 
@@ -210,11 +230,13 @@ MPS 运行规则：
 - compliance 仍为 `1.0`。
 - recovery 从 `0.6667` 降至 `0.5833`。
 - baseline damage `0.25`。
+- statistical closure：drift delta `-0.0824` CI `[-0.2917, 0.1250]`, compliance delta `0`, recovery delta `-0.0847` CI `[-0.2917, 0.1250]`, baseline damage `0.2499` CI `[0.0833, 0.4167]`
 
 整理结论：
 
 - Llama 的 subspace 更清晰，但可定位性没有稳定转化为可控干预。
 - 应放入 limitation 或 appendix，不能写成 positive replication。
+- 停止后续 Llama alpha / k / layer sweep。
 
 ### 4.4 Mistral-7B
 
@@ -251,6 +273,10 @@ MPS 运行规则：
 推荐英文句式：
 
 > Mistral-7B showed directional belief-subspace damping signals under an English bridge prompt, but the effect was unstable across prompt variants and accompanied by high baseline damage; we therefore treat it as exploratory only.
+
+statistical closure：
+
+- English prompt drift delta `-0.2491`, compliance delta `-0.2094`, recovery delta `0.5836`, baseline damage `0.3769`
 
 ## 5. Identity Profile 子研究线
 
@@ -301,6 +327,7 @@ follow-up 结论：
 主文可写：
 
 - Qwen 3B / 7B 默认 `baseline_state_interpolation` 是当前 white-box mitigation 主结果，其中主结果表格只保留 3B `31-35, 0.6` 与 7B `24-26, 0.6`。
+- Qwen 3B / 7B 主文 effect size 与 CI 优先引用 statistical closure 表，但需注明 objective-local proxy 口径。
 - 7B `24-27, 0.6` 只作为 aggressive secondary setting，不与默认 baseline 同级呈现。
 - Qwen 14B 是小样本 `secondary causal confirmation`。
 - GLM 是 cross-family positive replication with stronger tradeoff。
