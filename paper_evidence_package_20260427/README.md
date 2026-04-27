@@ -55,7 +55,7 @@
   - white-box human audit bundle、annotation guidelines、paper summary。
 
 - `appendix_materials/`
-  - 冻结证据包、主文草稿、appendix-ready notes、internal reproducibility note。
+  - 冻结证据包、主文草稿、appendix-ready notes、supporting note、internal reproducibility note。
 
 ## High-priority Files
 
@@ -86,12 +86,16 @@
 - 总索引：
   - [INDEX.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/INDEX.md)
 
+- Supporting note / evidence boundary note：
+  - [whitebox_supporting_note.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/appendix_materials/whitebox_supporting_note.md)
+
 ## What To Open First
 
 1. [INDEX.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/INDEX.md)
 2. [configs/statistical_closure_README.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/configs/statistical_closure_README.md)
 3. [appendix_materials/frozen_evidence_dossier.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/appendix_materials/frozen_evidence_dossier.md)
 4. [appendix_materials/internal_reproducibility_note.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/appendix_materials/internal_reproducibility_note.md)
+5. [appendix_materials/whitebox_supporting_note.md](/Users/shiqi/code/graduation-project/paper_evidence_package_20260427/appendix_materials/whitebox_supporting_note.md)
 
 ## Main-text Alignment Notes
 
@@ -111,3 +115,15 @@
 
 - `results_mainline/qwen7b_heldout_validation`
   - 对应“held-out validation”，用于说明默认 7B 主线方向不局限于原始调参子集。
+
+## Supporting Note Placement
+
+`appendix_materials/whitebox_supporting_note.md` 是当前 package 中最合适的归档位置。它应被视为 `appendix note / evidence boundary note`，而不是新的主结果文档。
+
+当前它覆盖三部分内容：
+
+- objective-local metric family note
+- updated controls + held-out support artifact note
+- GLM sample-size comparability note
+
+它的作用是补强主文与附录的表述边界，而不是替换 frozen effect sizes、figure assets 或主文主表。

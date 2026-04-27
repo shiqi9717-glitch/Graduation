@@ -42,5 +42,6 @@
 | Prompt templates | Bridge prompt templates | `prompt_templates/bridge_scenarios.jsonl` | Appendix prompt templates | ready | 基础 prompt 证据 |
 | Human audit | White-box human audit bundle | `human_audit/whitebox_human_audit_bundle` | Appendix human audit | ready | 包含 rows、manifest、guidelines |
 | Human audit | Annotation instructions | `human_audit/annotation_guidelines.md` | Appendix human audit | ready | 给复核人直接用 |
+| Appendix / Supporting note | Objective-local metric family, updated controls + held-out support, and GLM sample-size comparability boundaries | `appendix_materials/whitebox_supporting_note.md` | Appendix note / evidence boundary note | ready | 用于补充主文与附录的边界说明，不构成新主结果 |
 | Appendix / Internal note | Internal reproducibility note | `appendix_materials/internal_reproducibility_note.md` | Appendix reproducibility | ready | 本 package 内生成说明 |
 | Appendix / Draft lineage | Frozen dossier and writing lineage | `appendix_materials/frozen_evidence_dossier.md` | Appendix writing support | ready | 写作部门上游锚点 |
