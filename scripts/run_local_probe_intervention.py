@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -87,6 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--subtraction-scales", default="")
     parser.add_argument("--interpolation-scale", type=float, default=0.5)
     parser.add_argument("--interpolation-scales", default="")
+    parser.add_argument("--control-random-seed", type=int, default=20260426)
     parser.add_argument("--limit-samples", type=int, default=0)
     parser.add_argument("--flush-every", type=int, default=20)
     parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
@@ -100,6 +102,28 @@ def _default_explicit_layers(model_name: str) -> tuple[int, ...]:
     if "3B" in model or "3b" in model:
         return (31, 32, 33, 34, 35)
     return ()
+
+
+def _build_shuffled_baseline_record_map(
+    *,
+    sample_ids: list[str],
+    scenario_record_map: dict[tuple[str, str], dict],
+    seed: int,
+) -> dict[str, dict]:
+    if not sample_ids:
+        return {}
+
+    shuffled_ids = list(sample_ids)
+    rng = random.Random(int(seed))
+    rng.shuffle(shuffled_ids)
+    if len(shuffled_ids) > 1 and any(a == b for a, b in zip(sample_ids, shuffled_ids)):
+        shuffled_ids = shuffled_ids[1:] + shuffled_ids[:1]
+
+    return {
+        sample_id: scenario_record_map[(shuffled_id, "baseline")]
+        for sample_id, shuffled_id in zip(sample_ids, shuffled_ids)
+        if (shuffled_id, "baseline") in scenario_record_map
+    }
 
 
 def main() -> int:
@@ -131,7 +155,11 @@ def main() -> int:
 
     specs: list[InterventionSpec] = []
     for method in methods:
-        scales = interpolation_scales if method == "baseline_state_interpolation" else subtraction_scales
+        scales = (
+            interpolation_scales
+            if method in {"baseline_state_interpolation", "random_direction_control", "shuffled_label_control"}
+            else subtraction_scales
+        )
         for layer_config_name, layer_config in layer_configs:
             for scale in scales:
                 specs.append(
@@ -140,7 +168,11 @@ def main() -> int:
                         target_layers=tuple(layer_config),
                         layer_config_name=layer_config_name,
                         subtraction_scale=float(scale if method == "late_layer_residual_subtraction" else args.subtraction_scale),
-                        interpolation_scale=float(scale if method == "baseline_state_interpolation" else args.interpolation_scale),
+                        interpolation_scale=float(
+                            scale
+                            if method in {"baseline_state_interpolation", "random_direction_control", "shuffled_label_control"}
+                            else args.interpolation_scale
+                        ),
                         target_sample_types=tuple(direction_sample_types),
                     )
                 )
@@ -158,6 +190,13 @@ def main() -> int:
     ]
     if int(args.limit_samples) > 0:
         samples = samples[: int(args.limit_samples)]
+
+    sample_ids = [str(sample["sample_id"]) for sample in samples]
+    shuffled_baseline_record_map = _build_shuffled_baseline_record_map(
+        sample_ids=sample_ids,
+        scenario_record_map=scenario_record_map,
+        seed=int(args.control_random_seed),
+    )
 
     output_dir = prepare_output_dir(Path(args.output_dir), run_name=sanitize_filename(args.model_name))
     logger.info(
@@ -225,6 +264,8 @@ def main() -> int:
                 subtraction_directions=subtraction_directions,
                 subtraction_scale=spec.subtraction_scale,
                 interpolation_scale=spec.interpolation_scale,
+                shuffled_baseline_record_map=shuffled_baseline_record_map,
+                random_seed=int(args.control_random_seed),
             )
             interference_patch_map = build_layer_patch_map(
                 method=spec.method,
@@ -235,6 +276,8 @@ def main() -> int:
                 subtraction_directions=subtraction_directions,
                 subtraction_scale=spec.subtraction_scale,
                 interpolation_scale=spec.interpolation_scale,
+                shuffled_baseline_record_map=shuffled_baseline_record_map,
+                random_seed=int(args.control_random_seed),
             )
 
             baseline_intervened = runner.patch_final_token_residuals_multi(
@@ -263,6 +306,7 @@ def main() -> int:
                     "active_scale": spec.active_scale,
                     "subtraction_scale": spec.subtraction_scale,
                     "interpolation_scale": spec.interpolation_scale,
+                    "control_random_seed": int(args.control_random_seed),
                     "ground_truth": ground_truth,
                     "wrong_option": wrong_option,
                     "baseline_reference_answer": baseline_ref.get("predicted_answer"),
@@ -291,6 +335,7 @@ def main() -> int:
                     "layer_config_name": spec.layer_config_name,
                     "target_layers": list(spec.target_layers),
                     "active_scale": spec.active_scale,
+                    "control_random_seed": int(args.control_random_seed),
                     "baseline_reference_correct": baseline_ref.get("predicted_answer") == ground_truth,
                     "interference_reference_correct": interference_ref.get("predicted_answer") == ground_truth,
                     "baseline_intervened_correct": baseline_intervened.get("predicted_answer") == ground_truth,
@@ -362,6 +407,11 @@ def main() -> int:
             for spec in specs
         ],
         "subtraction_direction_layers": sorted(int(layer) for layer in subtraction_directions),
+        "control_random_seed": int(args.control_random_seed),
+        "shuffled_label_control": {
+            "strategy": "cyclic_next_sample_baseline_state",
+            "num_mapped_samples": len(shuffled_baseline_record_map),
+        },
         "intervention_summary": intervention_summary,
     }
 

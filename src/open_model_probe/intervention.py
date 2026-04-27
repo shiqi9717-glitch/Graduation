@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +13,12 @@ import numpy as np
 
 
 TARGET_TRANSITION = "baseline_correct_to_interference_wrong"
-SUPPORTED_METHODS = ("late_layer_residual_subtraction", "baseline_state_interpolation")
+SUPPORTED_METHODS = (
+    "late_layer_residual_subtraction",
+    "baseline_state_interpolation",
+    "random_direction_control",
+    "shuffled_label_control",
+)
 
 
 @dataclass(frozen=True)
@@ -27,7 +33,11 @@ class InterventionSpec:
 
     @property
     def active_scale(self) -> float:
-        if self.method == "baseline_state_interpolation":
+        if self.method in {
+            "baseline_state_interpolation",
+            "random_direction_control",
+            "shuffled_label_control",
+        }:
             return float(self.interpolation_scale)
         return float(self.subtraction_scale)
 
@@ -132,6 +142,8 @@ def build_layer_patch_map(
     subtraction_directions: Dict[int, np.ndarray] | None = None,
     subtraction_scale: float = 0.5,
     interpolation_scale: float = 0.5,
+    shuffled_baseline_record_map: Dict[str, Dict[str, Any]] | None = None,
+    random_seed: int = 20260426,
 ) -> Dict[int, np.ndarray]:
     if method not in SUPPORTED_METHODS:
         raise ValueError(f"Unsupported intervention method: {method}")
@@ -162,6 +174,27 @@ def build_layer_patch_map(
                     (1.0 - float(interpolation_scale)) * interference_tensor
                     + float(interpolation_scale) * baseline_tensor
                 ).astype(np.float32)
+        elif method == "random_direction_control":
+            source_tensor = baseline_tensor if str(scenario) == "baseline" else interference_tensor
+            delta = baseline_tensor - interference_tensor
+            delta_norm = float(np.linalg.norm(delta))
+            seed_material = f"{int(random_seed)}::{sample_id}::{scenario}::{int(layer_index)}".encode("utf-8")
+            seed = int.from_bytes(hashlib.sha256(seed_material).digest()[:8], byteorder="little", signed=False)
+            rng = np.random.default_rng(seed)
+            direction = rng.normal(size=source_tensor.shape).astype(np.float32)
+            direction_norm = float(np.linalg.norm(direction))
+            if direction_norm > 0.0 and delta_norm > 0.0:
+                direction = direction / direction_norm * delta_norm
+            patch_map[int(layer_index)] = (source_tensor + float(interpolation_scale) * direction).astype(np.float32)
+        elif method == "shuffled_label_control":
+            if shuffled_baseline_record_map is None or str(sample_id) not in shuffled_baseline_record_map:
+                raise KeyError(f"Missing shuffled baseline record for sample_id={sample_id}")
+            shuffled_tensor = load_hidden_array(shuffled_baseline_record_map[str(sample_id)], array_key)
+            source_tensor = baseline_tensor if str(scenario) == "baseline" else interference_tensor
+            patch_map[int(layer_index)] = (
+                (1.0 - float(interpolation_scale)) * source_tensor
+                + float(interpolation_scale) * shuffled_tensor
+            ).astype(np.float32)
     return patch_map
 
 

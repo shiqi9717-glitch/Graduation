@@ -48,8 +48,10 @@ def test_select_target_layers_prefers_most_negative_rows(tmp_path: Path):
 def test_direction_building_and_patch_maps(tmp_path: Path):
     baseline_npz = tmp_path / "baseline.npz"
     interference_npz = tmp_path / "interference.npz"
+    shuffled_npz = tmp_path / "shuffled_baseline.npz"
     np.savez_compressed(baseline_npz, layer_24_final_token=np.asarray([1.0, 2.0], dtype=np.float32))
     np.savez_compressed(interference_npz, layer_24_final_token=np.asarray([3.0, 6.0], dtype=np.float32))
+    np.savez_compressed(shuffled_npz, layer_24_final_token=np.asarray([9.0, 10.0], dtype=np.float32))
 
     rows = [
         {
@@ -107,6 +109,44 @@ def test_direction_building_and_patch_maps(tmp_path: Path):
         interpolation_scale=0.25,
     )
     assert np.allclose(interpolation_patch[24], np.asarray([2.5, 5.0], dtype=np.float32))
+
+    shuffled_patch = build_layer_patch_map(
+        method="shuffled_label_control",
+        sample_id="s1",
+        scenario="interference",
+        target_layers=(24,),
+        scenario_record_map=record_map,
+        interpolation_scale=0.25,
+        shuffled_baseline_record_map={
+            "s1": {
+                "sample_id": "s2",
+                "scenario": "baseline",
+                "layer_hidden_state_path": str(shuffled_npz),
+            }
+        },
+    )
+    assert np.allclose(shuffled_patch[24], np.asarray([4.5, 7.0], dtype=np.float32))
+
+    random_patch_a = build_layer_patch_map(
+        method="random_direction_control",
+        sample_id="s1",
+        scenario="interference",
+        target_layers=(24,),
+        scenario_record_map=record_map,
+        interpolation_scale=0.25,
+        random_seed=7,
+    )
+    random_patch_b = build_layer_patch_map(
+        method="random_direction_control",
+        sample_id="s1",
+        scenario="interference",
+        target_layers=(24,),
+        scenario_record_map=record_map,
+        interpolation_scale=0.25,
+        random_seed=7,
+    )
+    assert np.allclose(random_patch_a[24], random_patch_b[24])
+    assert not np.allclose(random_patch_a[24], interpolation_patch[24])
 
 
 def test_format_layer_config_name_supports_ranges_and_sparse_sets():

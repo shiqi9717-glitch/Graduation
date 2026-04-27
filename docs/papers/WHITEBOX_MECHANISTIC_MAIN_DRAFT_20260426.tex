@@ -12,63 +12,72 @@
 \emergencystretch=2em
 \Urlmuskip=0mu plus 2mu
 
-\title{Pressure Is Not One Mechanism: Separating Belief Drift from Identity/Profile Pathways in White-box Sycophancy}
+\title{Pressure-Induced Sycophancy Is Not Uniformly Linearly Steerable: Bounded White-box Evidence Across Belief and Identity/Profile Pressure}
 \author{Anonymous Authors}
 \date{}
 
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \newcommand{\model}[1]{\textsc{#1}}
 \newcommand{\metric}[1]{\texttt{#1}}
+\newcommand{\artifact}[1]{\textsc{#1}}
+\graphicspath{{/Users/shiqi/code/graduation-project/docs/papers/figures/}}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
 Sycophantic behavior in language models is often treated as a single failure mode: a model changes its answer or stance under user pressure.
-We argue that this framing is too coarse.
-Using a frozen white-box mechanistic evidence package across Qwen, GLM, Llama, and Mistral variants, we show that pressure-induced behavior follows separable internal pathways.
-For belief-style pressure, Qwen 7B and Qwen 3B provide the formal mainline evidence: a late-layer belief-pressure drift can be detected and partially damped under the default \path{baseline_state_interpolation} settings, reducing stance drift and pressured compliance while preserving recovery and introducing no measured baseline damage under the objective-local proxy mapping.
-Qwen 14B provides secondary causal confirmation, and GLM-4-9B reproduces the damping direction across model families, albeit with a substantially stronger damage tradeoff.
-In contrast, identity/profile pressure shows weaker causal intervention support: localization evidence exists, but prefix-specific interventions do not stably separate from matched controls.
-Llama-3.1-8B further clarifies the boundary of the claim: its belief-pressure subspace is locatable under an English bridge prompt, but intervention transfer remains weak, leaving pressured compliance unchanged while reducing recovery and increasing baseline damage.
-Together, these results support a pressure-type-specific account of sycophancy: belief-style pressure admits a transferable and partially intervenable late-layer drift, whereas identity/profile pressure is not explained by the same linear steering story.
+We argue that this framing is too coarse for white-box intervention claims.
+Using a frozen mechanistic evidence package across Qwen, GLM, Llama, and Mistral variants, we provide bounded evidence for pressure-type-specific linear steerability.
+For belief-style argumentative pressure, \artifact{Qwen-7B-mainline-run} and \artifact{Qwen-3B-mainline-run} provide the objective-local Qwen mainline: under the default \texttt{baseline\_state\_interpolation} settings, a late-layer belief-pressure drift can be partially intervened upon, reducing stance drift and pressured compliance while preserving recovery and introducing no observed baseline damage in the tested sample under an objective-local proxy mapping.
+New formal controls and held-out validation strengthen this interpretation: the Qwen-7B mainline is not well explained as an arbitrary activation edit, a simple pairing artifact, or a result confined to the original tuned subset.
+\artifact{Qwen-14B-secondary-causal-run} provides bounded small-sample secondary confirmation, and \artifact{GLM-cross-family-subspace-run} supports cross-family directionality with a substantial damage tradeoff.
+By contrast, identity/profile pressure does not exhibit the same linear-steerability profile under the tested setup: \artifact{Identity-followup-run} provides boundary evidence rather than identity-specific mitigation.
+\artifact{Llama-limitation-diagnostic} sharpens the central limitation: a pressure-related direction can be locatable at the representation level without yielding reliable behavioral control.
+Overall, the paper is a mechanism-boundary study rather than a universal mitigation paper: it supports a partially intervenable late-layer drift for belief-style pressure in the Qwen mainline, while using identity/profile pressure and Llama transfer to mark the limits of treating pressure as one uniformly steerable mechanism.
 \end{abstract}
 
 \section{Introduction}
 
 Language models often change their answers when a user applies pressure.
 In sycophancy evaluations, this behavior is commonly treated as a single phenomenon: a model follows the user's stated preference, identity, or argument even when doing so conflicts with a more stable answer.
-This behavioral framing is useful for measurement, but it leaves open a mechanistic question: are all pressure-induced shifts produced by the same internal mechanism?
+This behavioral framing is useful for measurement, but behavioral similarity alone does not imply the same intervention geometry or the same degree of linear controllability.
 
-This paper argues that the answer is no.
+This paper argues that pressure-induced sycophancy is not uniformly linearly steerable.
 We study pressure-induced sycophancy through a white-box evidence package that separates belief-style pressure from identity/profile pressure.
 Belief-style pressure refers to cases where the user supplies an argument or stance cue that pushes the model toward a pressure-aligned belief.
 Identity/profile pressure refers to cases where the user profile or identity frame changes the social context of the answer.
-Both can look similar behaviorally, but the evidence does not support treating them as one shared internal pathway.
+Both can look similar behaviorally, but the evidence does not support treating them as one shared linearly controllable pathway.
 
 Our main claim is:
 \begin{quote}
-Pressure is not one mechanism: belief-style pressure admits a transferable and partially intervenable late-layer drift, while identity/profile pressure follows a different and less linearly steerable pathway.
+Pressure-induced sycophancy is not uniformly linearly steerable: belief-style pressure admits a transferable and partially intervenable late-layer drift in the Qwen mainline, while identity/profile pressure and Llama transfer mark clear boundaries on that intervention story.
 \end{quote}
 
-The positive part of the claim is anchored in the Qwen mainline.
-Under the default \path{baseline_state_interpolation} settings, Qwen 7B and Qwen 3B reduce stance drift and pressured compliance while preserving recovery and introducing no measured baseline damage under the objective-local proxy mapping defined in the statistical closure notes.
-These results indicate that belief-style pressure can induce a late-layer drift that is not merely detectable but partially intervenable.
+The positive part of the claim is anchored in the objective-local Qwen mainline.
+Under the default \texttt{baseline\_state\_interpolation} settings, Qwen 7B and Qwen 3B reduce stance drift and pressured compliance while preserving recovery and introducing no observed baseline damage in the tested sample under the objective-local proxy mapping defined in the statistical closure notes.
+Together with new formal controls and held-out validation, these results indicate that belief-style pressure can induce a late-layer drift that is not merely detectable but partially intervenable in the tested Qwen setting.
 
 The broader evidence is deliberately bounded.
 Qwen 14B provides secondary causal confirmation, suggesting that the belief-pressure damping direction is not confined to one model size.
-GLM-4-9B gives cross-family support, but with a substantially stronger baseline-damage tradeoff.
-Llama-3.1-8B provides the main boundary case: the belief-pressure direction is more identifiable under an English bridge prompt, yet the tested intervention transfers weakly, leaving pressured compliance unchanged, reducing recovery, and introducing substantial baseline damage.
+GLM-4-9B gives cross-family directionality support, but with a substantially stronger baseline-damage tradeoff.
+Llama-3.1-8B provides the clearest limitation case: the belief-pressure direction is more identifiable under an English bridge prompt, yet the tested intervention transfers weakly, leaving pressured compliance unchanged, reducing recovery, and introducing substantial baseline damage.
 Mistral-7B remains appendix exploratory rather than formal replication, with high baseline damage and unstable behavior across prompt variants.
 
 The negative part of the claim is equally important.
-The identity/profile line provides weak localization evidence but insufficient causal intervention support.
+The identity/profile line provides weak localization evidence but insufficient causal intervention support, and Llama shows that localization need not imply behavioral usefulness.
 We therefore do not claim identity-specific mitigation, and we do not treat identity/profile pressure as solved by the same linear belief-damping story.
-This distinction is the paper's central contribution: not universal pressure mitigation, and not first-ever sycophancy steering, but a pressure-type-specific account of when a white-box pressure direction is detectable, transferable, and behaviorally useful.
+This distinction is the paper's central contribution: not universal pressure mitigation, but a pressure-type-specific account of when a white-box pressure direction is detectable, transferable, and behaviorally useful.
+
+In contribution terms, the paper makes three bounded claims.
+First, it provides mainline white-box evidence that belief-style argumentative pressure admits a partially intervenable late-layer drift in Qwen under fixed objective-local settings.
+Second, it separates localization from controllability by showing that a locatable pressure-related direction in Llama is not enough for reliable behavioral intervention.
+Third, it uses identity/profile pressure as a boundary case, showing that it does not share the same linear-steerability profile under the tested setup and therefore should not be folded into the belief-pressure mitigation story.
 
 The paper proceeds as follows.
 Section~\ref{sec:related} situates the work relative to behavioral sycophancy measurement and activation-level intervention work, emphasizing pressure-type separation rather than generic steering.
-Section~\ref{sec:setup} defines the pressure types, metrics, and evidence levels used throughout the paper.
+Section~\ref{sec:setup} introduces the task setup and pressure types.
+Section~\ref{sec:methods} defines the intervention methods, evaluation protocol, and statistical reporting boundary.
 Section~\ref{sec:map} presents the white-box mechanism map.
 Section~\ref{sec:qwen} reports the Qwen mainline.
 Section~\ref{sec:cross} summarizes cross-scale and cross-family support.
@@ -79,44 +88,61 @@ Section~\ref{sec:limitations} states limitations, and Section~\ref{sec:conclusio
 \section{Related Work and Positioning}
 \label{sec:related}
 
-Prior work on sycophancy often begins from behavioral measurement: does the model follow the user, agree with an incorrect premise, or shift its answer under social or argumentative pressure?
-This lens defines the failure mode that users experience.
-However, behavioral similarity does not guarantee mechanistic identity.
-Two prompts can induce sycophantic-looking answers while relying on different internal features, layers, or causal pathways.
+Behavioral sycophancy evaluation provides the paper's starting point.
+This line of work asks whether a model follows the user, endorses an incorrect premise, or changes its answer under social or argumentative pressure.
+That lens is indispensable because it defines the failure mode users observe.
+At the same time, behavioral similarity does not imply mechanistic identity: two prompts can produce superficially similar agreement behavior while relying on different internal features, layers, or causal pathways.
+Our paper inherits the behavioral framing but asks a narrower mechanistic question about which forms of pressure admit the same kind of intervention response.
 
-Activation-level intervention work provides another backdrop: model behavior can sometimes be shifted by modifying internal states.
-Our focus is different.
-We do not frame the paper as a first demonstration that sycophancy can be steered.
-Instead, we ask whether different forms of pressure instantiate the same internal mechanism.
-The evidence suggests they do not.
+Activation steering and representation engineering provide the second backdrop.
+These approaches study how internal activations, steering vectors, or low-dimensional directions can shift model outputs.
+They establish that internal-state interventions can sometimes change behavior in targeted ways.
+Our contribution is not to claim the first activation-level sycophancy intervention.
+Instead, we use intervention evidence to test whether different pressure types share a common linearly steerable profile.
 
-This distinction shapes the novelty claim.
-We treat sycophancy mitigation as pressure-type-specific rather than as a single universal steering target.
-Belief-style pressure shows a late-layer drift that is partially controllable in the Qwen mainline, while identity/profile pressure does not inherit that conclusion.
-The key contribution is mechanism separation: belief pressure and identity/profile pressure differ in internal representation and intervention response.
+Mechanistic localization versus causal control is the most important conceptual distinction for this paper.
+Localization evidence can show that a pressure-related signal is present in model representations, but that does not guarantee that manipulating the localized direction yields reliable behavioral control.
+This distinction is central to our interpretation of the Llama result.
+Llama shows that a pressure-related direction can be detectable while remaining weakly aligned with the behaviorally useful control axis, so the paper treats localization and controllability as related but non-equivalent notions.
 
-\section{Setup: Pressure Types, Metrics, and Evidence Levels}
+Persona and identity conditioning form the fourth relevant context.
+User profile, affiliation, and persona framing are well known to influence model outputs, but their effects need not match the intervention profile of belief-style argumentative pressure.
+This motivates our treatment of \texttt{identity\_profile} as a boundary case rather than as a second positive mitigation line.
+Under the tested setup, identity/profile pressure does not exhibit the same linear-steerability profile as \texttt{belief\_argument}, even though localization observations are present.
+
+The positioning of this work follows directly from these distinctions.
+This paper is not the first behavioral study of sycophancy, and it is not the first study of activation-level intervention.
+Its contribution is to provide evidence for pressure-type-specific linear steerability.
+Belief-style pressure shows a partially controllable late-layer drift in the Qwen mainline, whereas identity/profile pressure and Llama transfer expose limits of treating pressure as a single uniformly steerable mechanism.
+
+\section{Task Setup and Pressure Types}
 \label{sec:setup}
 
-We organize the evidence by pressure type rather than by a single aggregate sycophancy score.
-The first pressure type, \texttt{belief\_argument}, captures settings where the user introduces a belief-like argument or stance cue.
-The core mechanistic hypothesis is that pressure induces a late-layer representational drift that can be partially damped by moving the residual stream toward a baseline state or by damping a matched belief-pressure subspace.
+We use two evaluation scopes in the paper.
+The first is a full bridge benchmark protocol, recorded in \artifact{Bridge-protocol-manifest}, with three fixed source files: PhilPapers 2020, the NLP survey source, and the political typology quiz source.
+Its scenarios are fixed to \texttt{baseline}, \texttt{pressured}, and \texttt{recovery}, and its pressure taxonomy is fixed to \texttt{belief\_argument} and \texttt{identity\_profile}.
+The formal bridge manifest records protocol coverage of 30{,}168 items and 90{,}504 scenario instances.
+These counts describe the intended benchmark scope, not a full-corpus measured result reported in this paper.
+The currently archived bridge behavioral tables correspond instead to \artifact{Bridge-sampled-n144-result}, a sampled run with \(n=144\).
 
-The second pressure type, \texttt{identity\_profile}, captures settings where a user profile or identity context changes the social frame of the answer.
-For this pressure type, the evidence supports localization observations but does not support a stable causal intervention claim.
-We therefore use identity/profile results as a boundary on generalization rather than as a mitigation success.
+The second scope is the Qwen white-box mainline.
+This mainline does not use the full bridge corpus directly as a single intervention benchmark.
+Instead, it uses a fixed objective-local subset of 108 items, consisting of 50 \texttt{strict\_positive} items, 50 \texttt{high\_pressure\_wrong\_option} items, and 8 controls.
+This subset is the basis for the formal Qwen 7B and Qwen 3B intervention results reported in the main text.
+For Figure~\ref{fig:qwen-mainline} and the associated effect-size closure, the reported sample size is \(n=100\): the statistical closure removes the 8 controls and retains only the \texttt{strict\_positive} and \texttt{high\_pressure\_wrong\_option} items.
 
-The primary behavioral quantities come from the frozen statistical closure.
-\metric{stance\_drift\_delta} is defined as the intervention rate minus the reference rate, so negative values indicate less pressure-induced drift.
-\metric{pressured\_compliance\_delta} is also intervention rate minus reference rate, so negative values indicate less pressure-aligned compliance.
-\metric{recovery\_delta} measures intervention recovery relative to the reference setup, where positive values indicate improved recovery.
-\metric{baseline\_damage\_rate} measures damage on baseline behavior, where lower is better.
+We organize the analysis by pressure type rather than by a single aggregate sycophancy score.
+The first pressure type, \texttt{belief\_argument}, captures cases where the user provides an explicit stance or argumentative cue.
+The second pressure type, \texttt{identity\_profile}, captures cases where identity, affiliation, or persona framing changes the social context of the answer.
+The paper's central question is whether these pressure types exhibit the same linear-steerability profile under white-box intervention.
 
-For the Qwen 3B and Qwen 7B mainline, the statistical closure uses a special objective-local proxy mapping.
-In this mapping, stance drift uses an interference-induced-error proxy on strict-positive, high-pressure wrong-option items; pressured compliance uses a wrong-option-follow proxy on the same local subset; and recovery equals the intervention recovery rate because the reference system has structural zero recovery under this intervention setup.
-We therefore describe these as objective-local proxy results, not as a leaderboard-equivalent measure that can be directly merged with bridge causal transfer lines.
+The bridge setup pairs three prompt scenarios for each item.
+In the \texttt{baseline} scenario, the model is asked to answer independently.
+In the \texttt{pressured} scenario, the prompt includes a user profile or stance-bearing context.
+In the \texttt{recovery} scenario, the prompt preserves the pressure context but explicitly instructs the model to answer according to its own best judgment rather than mirroring the user's stated view.
+For the bridge benchmark, these prompt pairings are fixed by the manifest and should be understood as part of the task definition, not as a free prompt search space.
 
-The evidence levels are fixed throughout the paper.
+The evidence levels are also fixed.
 Qwen 7B is the formal mainline result, and Qwen 3B is the formal mainline replication.
 Qwen 14B is secondary causal confirmation, not a new primary mitigation line.
 GLM-4-9B is cross-family positive replication with a stronger tradeoff.
@@ -124,9 +150,73 @@ Llama-3.1-8B is weak replication / limitation: it helps identify the boundary be
 Mistral-7B is appendix exploratory only.
 The \texttt{identity\_profile} line is a weak mechanistic observation / boundary case, not an identity-specific mitigation result.
 
-This hierarchy is central to the interpretation.
-The paper does not ask whether every model admits the same steering direction.
-Instead, it asks whether pressure-induced behavior decomposes into mechanistically separable pathways, and whether one pathway, belief-style pressure, has a more linearly steerable late-layer component than identity/profile pressure.
+\section{Methods}
+\label{sec:methods}
+
+\subsection*{Model scoring and evaluation protocol}
+
+The white-box mainline uses frozen causal language models and single-pass option-logit scoring rather than free-form sampling.
+For each candidate prompt, the model is run once, and the predicted answer is defined as the candidate answer token with the highest final logit.
+This choice matters for interpretation: the mainline results measure intervention effects on an objective-local multiple-choice decision rule, not on unconstrained generation behavior.
+
+For the bridge-wide setup, the paper uses the fixed \texttt{baseline} / \texttt{pressured} / \texttt{recovery} scenarios defined by the formal manifest.
+For the Qwen mainline, the objective-local subset is evaluated with the same fixed answer candidates and single-pass logit comparison.
+Because this protocol is not a free-sampling generation benchmark, the mainline results should not be narrated as a universal mitigation result.
+
+\subsection*{Activation site and intervention families}
+
+The mainline intervention site is the selected late-layer final-token residual stream.
+For the Qwen mainline, the default intervention family is \texttt{baseline\_state\_interpolation}.
+At layer $l$, given a pressured hidden state $h^{\mathrm{pressured}}_l$ and a matched baseline hidden state $h^{\mathrm{baseline}}_l$, the intervention is
+\[
+h'_l = (1-\beta) h^{\mathrm{pressured}}_l + \beta h^{\mathrm{baseline}}_l,
+\]
+where $\beta$ is the intervention scale.
+The default Qwen 7B setting uses layers 24--26 with $\beta = 0.6$, and the default Qwen 3B setting uses layers 31--35 with $\beta = 0.6$.
+These defaults are not presented as globally optimal.
+Rather, they are the archived mainline settings supported by the intervention-stability materials and, for Qwen 7B, by the updated held-out and control bundle showing a reasonable benefit/damage tradeoff rather than a purely cherry-picked configuration.
+
+The paper also references a second intervention family, \texttt{pressure\_subspace\_damping}, for cross-model transfer settings.
+In this family, pressured-minus-baseline hidden-state deltas are collected on a training split, principal components analysis is used to estimate a low-rank subspace $U_k$, and the test-time hidden state is damped by suppressing its projection onto that subspace after baseline-centering.
+Writing the baseline-centered hidden state as $\tilde{h}_l = h_l - h^{\mathrm{baseline}}_l$, one simple form is
+\[
+h'_l = h_l - \alpha U_k U_k^\top \tilde{h}_l,
+\]
+where $\alpha$ controls damping strength.
+This family is used for Qwen 14B, GLM, and Llama transfer-style evidence, not as a replacement for the default Qwen mainline.
+
+\subsection*{Metric definitions and objective-local proxy mapping}
+
+The main paper reports four quantities:
+\metric{stance\_drift\_delta},
+\metric{pressured\_compliance\_delta},
+\metric{recovery\_delta}, and
+\metric{baseline\_damage\_rate}.
+Each delta is defined as intervention rate minus reference rate, with the interpretation encoded in its sign.
+Negative \metric{stance\_drift\_delta} and negative \metric{pressured\_compliance\_delta} are better; positive \metric{recovery\_delta} is better; lower \metric{baseline\_damage\_rate} is better.
+
+For the Qwen 3B and Qwen 7B mainline, these are explicitly objective-local proxy metrics.
+In this mapping, stance drift is measured with an interference-induced-error proxy on the fixed \texttt{strict\_positive} and \texttt{high\_pressure\_wrong\_option} subset.
+Pressured compliance is measured with a wrong-option-follow proxy on the same subset.
+Recovery equals the intervention recovery rate because the corresponding reference setup has structural zero recovery under this protocol.
+These objective-local proxy metrics should not be merged into a single leaderboard with bridge causal transfer metrics.
+
+\subsection*{Statistical reporting boundary}
+
+The paper reports 95\% bootstrap confidence intervals from the frozen statistical-closure pipeline, using item-level paired resampling.
+For the main lines discussed in the paper, the archived sample counts are $n=100$ for Qwen 7B and Qwen 3B, and $n=24$ for Qwen 14B, GLM-4-9B, Llama-3.1-8B, and Mistral-7B.
+The current archived outputs do not separately serialize the bootstrap repetition count or the exact confidence-interval variant, so we do not over-specify those implementation details in the main text.
+We therefore present the confidence intervals as part of the frozen result package and avoid stronger claims about inferential procedure than the current audit trail supports.
+
+\subsection*{Controls, robustness, and audit boundary}
+
+The appendix robustness story is now stronger but still bounded.
+Available materials include subtraction controls for Qwen 3B and Qwen 7B, a Qwen 7B sanity control, Qwen 7B random-direction and shuffled-label controls, layer/strength stability outputs for Qwen 3B and Qwen 7B, a Qwen 7B held-out validation slice, a Qwen 7B aggressive secondary setting, and a Llama alpha sweep paired with projection diagnostics.
+These materials are sufficient to support the narrower claim that the Qwen-7B mainline is not an arbitrary activation edit, not a simple pairing artifact, and not confined to the original tuned subset.
+
+Even so, these controls do not turn the paper into a universal steering result.
+Similarly, the existing bridge audit should be described only as a limited rationale-conformity audit.
+It is not a complete human validation of the white-box intervention claim, and it should not be written as such.
 
 \section{Mechanistic Map: Pressure Is Not One Mechanism}
 \label{sec:map}
@@ -156,14 +246,20 @@ Identity/profile pressure remains a boundary case and should not be described as
 \section{Qwen Mainline: Belief-pressure Damping}
 \label{sec:qwen}
 
-The formal mainline evidence comes from Qwen 7B and Qwen 3B under the default \path{baseline_state_interpolation} settings.
+The formal mainline evidence comes from \artifact{Qwen-7B-mainline-run} and \artifact{Qwen-3B-mainline-run}; see Artifact Table~\ref{tab:artifact-registry}.
+Both runs use the default \texttt{baseline\_state\_interpolation} settings.
 For Qwen 7B, the default setting uses layers 24--26 at strength 0.6.
 Under the objective-local proxy mapping, the intervention reduces stance drift by -0.1493 with confidence interval [-0.2200, -0.0800], and reduces pressured compliance by -0.1595 with confidence interval [-0.2300, -0.0900].
-Recovery increases by 0.7127 with confidence interval [0.5000, 0.9000], while measured baseline damage is 0.
+Recovery increases by 0.7127 with confidence interval [0.5000, 0.9000], while no baseline damage is observed in the current sample.
 
 Qwen 3B provides the formal replication under layers 31--35 at strength 0.6.
 It reduces stance drift by -0.1597 with confidence interval [-0.2402, -0.0800], and pressured compliance by -0.2789 with confidence interval [-0.3700, -0.1900].
-Recovery increases by 0.6906 with confidence interval [0.5000, 0.8667], again with zero measured baseline damage.
+Recovery increases by 0.6906 with confidence interval [0.5000, 0.8667], again with no observed baseline damage in the current sample.
+
+The updated control and validation bundle strengthens the interpretation of the 7B mainline.
+Under \artifact{Qwen-7B-random-shuffled-negative-controls}, the random-direction control is approximately null (drift 0.0025, compliance -0.0060, recovery 0.0190, damage 0.0127), while the shuffled-label control produces high damage (0.5848) rather than a clean benefit profile.
+In the archived held-out validation slice, the default 7B setting preserves the mainline direction (drift -0.2000, compliance -0.1747, recovery 0.6571) with no observed baseline damage in the tested sample.
+Together, these controls support the bounded claim that the mainline is not well explained as an arbitrary activation edit, a simple pairing artifact, or a result confined to the original tuning subset.
 
 Together, these results support the main positive claim: in the tested Qwen settings, belief-style pressure admits a late-layer drift that is both detectable and partially intervenable.
 Figure~\ref{fig:qwen-mainline} shows the intended Qwen 7B and Qwen 3B comparison, separating stance drift, pressured compliance, recovery, and baseline damage.
@@ -175,10 +271,8 @@ They establish a formal Qwen mainline for belief-style pressure under the specif
 
 \begin{figure}[t]
   \centering
-  \fbox{\parbox{0.9\linewidth}{
-  \textbf{Placeholder.} Qwen mainline intervention effect. Plot Qwen 7B and Qwen 3B effects with confidence intervals for stance drift delta, pressured compliance delta, recovery delta, and baseline damage.
-  }}
-  \caption{Qwen mainline intervention effect. Metrics follow the objective-local proxy mapping specified in the statistical closure notes and are not treated as leaderboard-equivalent to bridge causal lines.}
+  \includegraphics[width=0.95\linewidth]{figure2_qwen_mainline_effect_ci.pdf}
+  \caption{Qwen mainline intervention effect with 95\% bootstrap confidence intervals. Qwen 7B is the formal mainline and Qwen 3B is the formal replication under the default \texttt{baseline\_state\_interpolation} settings. Metrics follow the objective-local proxy mapping in the statistical closure notes and should not be interpreted as leaderboard-equivalent to bridge causal transfer metrics.}
   \label{fig:qwen-mainline}
 \end{figure}
 
@@ -207,12 +301,13 @@ They establish a formal Qwen mainline for belief-style pressure under the specif
 \section{Cross-scale and Cross-family Support}
 \label{sec:cross}
 
-Qwen 14B extends the Qwen evidence across scale, but only as secondary causal confirmation rather than as a new main mitigation line.
+Qwen 14B extends the Qwen evidence across scale through \artifact{Qwen-14B-secondary-causal-run}; see Artifact Table~\ref{tab:artifact-registry}.
+It is used only as secondary causal confirmation rather than as a new main mitigation line.
 Under matched belief-subspace damping against no intervention, Qwen 14B reduces drift by -0.2068 with confidence interval [-0.4167, 0.0000], and reduces pressured compliance by -0.2484 with confidence interval [-0.4167, -0.0833].
 Its recovery delta is 0, and baseline damage is 0.0416.
 This supports the direction of the belief-pressure intervention while keeping the main claim anchored in the 3B/7B formal line.
 
-GLM-4-9B provides cross-family evidence.
+GLM-4-9B provides cross-family evidence through \artifact{GLM-cross-family-subspace-run}; see Artifact Table~\ref{tab:artifact-registry}.
 In the representative transfer setting, it reduces stance drift by -0.2932 with confidence interval [-0.5417, -0.0417], and pressured compliance by -0.2095 with confidence interval [-0.4167, 0.0000].
 It also improves recovery by 0.3769 with confidence interval [0.1667, 0.5833].
 However, this support comes with substantial baseline damage of 0.3325 with confidence interval [0.1667, 0.5417].
@@ -220,6 +315,13 @@ GLM is therefore cross-family positive replication with stronger tradeoff, not a
 
 Table~\ref{tab:cross-support} collects Qwen 14B and GLM.
 It makes the asymmetry visible: the belief-pressure damping direction transfers beyond the primary Qwen 3B/7B settings, but the quality of transfer depends on model family and damage profile.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.98\linewidth]{figure3_split_panel_tradeoff.pdf}
+  \caption{Split-panel cross-model tradeoff summary. Panel A reports Qwen 3B/7B objective-local proxy results; Panel B reports bridge causal or transfer-style results for Qwen 14B, GLM, Llama, and appendix-only Mistral. This split avoids merging proxy and bridge-causal metrics into a single unqualified leaderboard.}
+  \label{fig:cross-model-tradeoff}
+\end{figure}
 
 \begin{table}[t]
   \centering
@@ -241,7 +343,7 @@ It makes the asymmetry visible: the belief-pressure damping direction transfers 
 \section{Limitation Result: Llama Is Locatable But Not Controllable}
 \label{sec:llama}
 
-Llama-3.1-8B is the paper's most important limitation case.
+Llama-3.1-8B is the paper's most important limitation case, anchored in \artifact{Llama-limitation-diagnostic}; see Artifact Table~\ref{tab:artifact-registry}.
 The projection-to-logit summary indicates that the pressured-stage belief projection is stronger than baseline, so a belief-pressure direction is locatable under the English bridge prompt.
 However, this localization does not translate into reliable behavioral control.
 Projection magnitude is weakly and negatively correlated with stance drift, and the tested belief damping moves logits in the targeted direction while remaining entangled with the baseline manifold.
@@ -256,51 +358,63 @@ The limitation panel is therefore framed as ``locatable but not controllable,'' 
 
 \begin{figure}[t]
   \centering
-  \fbox{\parbox{0.9\linewidth}{
-  \textbf{Placeholder.} Llama locatable-but-not-controllable panel. Include projection-to-logit summary, weak alignment between projection and stance drift, and behavioral intervention outcome: small drift reduction, compliance unchanged, recovery down, damage up.
-  }}
-  \caption{Llama is a weak replication / limitation. The belief-pressure subspace is more identifiable under the English bridge prompt, but the tested intervention does not provide reliable behavioral control.}
+  \includegraphics[width=0.95\linewidth]{figure4_llama_localization_vs_controllability.pdf}
+  \caption{Llama localization versus controllability. The English bridge prompt makes a belief-pressure direction more identifiable at the representation level, but the corresponding intervention transfer remains weak: projection/logit evidence shows a locatable direction, while behavioral effects show only small drift reduction, unchanged pressured compliance, lower recovery, and substantial baseline damage.}
   \label{fig:llama-limitation}
 \end{figure}
 
-\section{Identity/profile Boundary}
+\section{Identity/Profile as a Boundary Case}
 \label{sec:identity}
 
-The \texttt{identity\_profile} line further supports the paper's mechanism-separation thesis.
-It provides weak localization evidence, but the available causal intervention evidence is insufficient to support identity-specific mitigation.
-The correct interpretation is not that identity/profile pressure is a failed version of belief pressure.
-Rather, it appears to follow a less linearly steerable pathway under the tested setup.
+The \texttt{identity\_profile} line provides a boundary on generalization for the main intervention claim, with supplementary evidence in \artifact{Identity-followup-run}; see Artifact Table~\ref{tab:artifact-registry}.
+In this setting, the task definition changes the social framing of the answer through identity, affiliation, or persona cues rather than through explicit argumentative pressure.
+That distinction matters because the paper's positive mainline is built on belief-style pressure, and the core question is whether the same intervention profile transfers beyond that regime.
 
-This result sharpens the paper's claim.
-If belief-style pressure and identity/profile pressure were merely two surface forms of the same mechanism, then a belief-drift intervention would be expected to transfer more cleanly.
-The current evidence does not support that.
-The identity/profile result therefore functions as a boundary on generalization, with detailed evidence placed in the appendix.
+Under the tested setup, identity/profile pressure shows localization observations but does not exhibit stable prefix-specific causal control beyond matched controls.
+This is the strongest safe claim supported by the current evidence.
+It is therefore not appropriate to describe the identity/profile line as identity-specific mitigation, nor to elevate it into a second positive mechanistic success story.
+
+This boundary result is still informative.
+If belief-style pressure and identity/profile pressure shared the same linearly steerable pathway, then the belief-drift intervention would be expected to transfer more cleanly.
+The current evidence does not support that expectation.
+We therefore use identity/profile pressure to show that the belief-pressure intervention should not be generalized to all pressure-like sycophancy.
+
+The resulting conclusion is deliberately modest.
+The paper does not claim that identity/profile pressure has been proven to instantiate a fully distinct mechanism.
+Instead, it argues that, under the tested setup, identity/profile pressure does not share the same linear-steerability profile as \texttt{belief\_argument}.
+Detailed localization and matched-control evidence is deferred to the appendix, where it serves as a boundary case rather than as a mitigation result.
 
 \section{Limitations}
 \label{sec:limitations}
 
-This paper has several important limitations.
-First, the Qwen 3B and Qwen 7B mainline uses an objective-local proxy mapping defined in the statistical closure notes.
-These results are the formal mainline for the present evidence package, but they should not be merged into a single leaderboard with bridge causal transfer lines.
-We therefore report the mapping explicitly and avoid comparing proxy and bridge settings as if they were identical measurements.
+This paper's limitations are part of the substantive result rather than a generic afterthought.
+First, the positive Qwen mainline is defined under an objective-local proxy mapping rather than a bridge-causal leaderboard.
+These results are the formal mainline for the present evidence package, but they should not be merged into a single ranking with bridge causal transfer lines.
+Their large recovery deltas are also partly tied to the structural-zero recovery reference in the underlying proxy setup.
 
-Second, the cross-scale and cross-family evidence is supportive but bounded.
+Second, the transfer lines remain small-sample and tradeoff-sensitive.
 Qwen 14B provides secondary causal confirmation, but the evidence is not positioned as a new primary mitigation line.
-Its sample size is smaller, recovery delta is 0, and baseline damage is nonzero.
+Qwen 14B, GLM-4-9B, Llama-3.1-8B, and Mistral-7B are all $n=24$ small-sample lines, whereas the Qwen 3B and Qwen 7B closure results are $n=100$ and arise from an original mainline subset of $n=108$ before controls are removed for closure.
+For Qwen 14B specifically, recovery delta is 0 and baseline damage is nonzero.
 GLM-4-9B reproduces the intervention direction across model families, but with substantially stronger baseline damage.
-GLM is therefore an important cross-family support result, not a no-cost deployment result.
+GLM and Mistral should therefore be read as damage-tradeoff cases, not as no-cost deployment evidence.
 
-Third, Llama-3.1-8B is a limitation rather than a positive replication.
+Third, the updated controls improve the robustness story but do not eliminate all control-side limitations.
+The archived random-direction, shuffled-label, and held-out materials are enough to show that the 7B mainline is not an arbitrary activation edit and not a simple pairing artifact, but the paper still does not provide an exhaustive formal control suite across all models and all pressure types.
+
+Fourth, Llama-3.1-8B remains a limitation rather than a positive replication.
 Its belief-pressure subspace is more identifiable under the English bridge prompt, but the tested intervention only slightly reduces drift, leaves pressured compliance unchanged, lowers recovery, and introduces substantial baseline damage.
 This shows that localization alone does not establish controllability.
 
-Fourth, the identity/profile line remains unresolved.
-The current evidence supports a boundary claim: identity/profile pressure has localization observations but insufficient causal intervention support.
+Fifth, the identity/profile line remains unresolved.
+The current evidence supports a boundary claim: identity/profile pressure has localization observations but insufficient causal intervention support, and it does not show a causal advantage over matched controls.
 It should not be described as identity-specific mitigation, and the belief-pressure damping method should not be presented as solving identity/profile pressure.
 
-Fifth, Mistral-7B is appendix exploratory only.
-Its directional signals are useful for documenting the search boundary, but high baseline damage and unstable behavior across prompt variants prevent a main-text replication claim.
-Similarly, late-layer residual subtraction should remain a method-boundary or negative-control family, not the paper's main usable intervention.
+Sixth, the paper does not yet provide complete human validation or circuit-level localization.
+The available audit materials remain limited rationale-conformity checks rather than a full human validation of the intervention claim, and the white-box evidence localizes behavior to intervention sites and subspaces rather than to a completed circuit-level account.
+
+Seventh, the mainline uses single-pass option-logit scoring rather than fully testing free-form generation behavior.
+This restriction is deliberate and methodologically useful, but it means the present paper is strongest as a bounded mechanism paper rather than as a complete account of generation-time pressure mitigation.
 
 Taken together, these limitations are part of the paper's core argument.
 The evidence supports a pressure-type-specific mechanism map, not a universal pressure mitigation method.
@@ -320,21 +434,205 @@ Belief-style pressure can be partially controlled in the tested Qwen settings, w
 
 \appendix
 
-\section{Appendix Placement Notes}
+\section{Prompt Templates and Scenario Construction}
+
+This appendix makes the task setup concrete with abbreviated prompt templates.
+All bridge examples use the same three-scenario structure described in the main text: \texttt{baseline}, \texttt{pressured}, and \texttt{recovery}.
+Each item also carries a pressure-type label and two answer keys: one answer matching the pressured behavior and one answer not matching it.
+
+\subsection*{Belief-argument example}
+
+The bridge prompt-pair archive stores belief-style items as a question plus three scenario wrappers.
+An abbreviated example is:
+
+\begin{quote}\small
+\textbf{Baseline prompt.} ``Answer the question independently, using your own best judgment. Output format: Final answer: A or B. Rationale: one short paragraph. Do you agree or disagree with the following claim about NLP as of 2022? In the context of NLP research, ethical considerations can sometimes be at odds with the progress of science. Choices: (A) Agree, (B) Disagree.''\\
+\textbf{Pressured prompt.} The same question is preceded by a user profile stating a strong opposing belief, for example: ``I strongly disagree with the claim ... ethics is an integral part of NLP research and cannot be at odds with it.''\\
+\textbf{Recovery prompt.} The pressured prompt is retained, but the instruction changes to ``answer according to your own best judgment rather than mirroring the user's stated view.''
+\end{quote}
+
+In this example, the pressured-behavior answer is \texttt{B} and the non-matching answer is \texttt{A}.
+This is the canonical \texttt{belief\_argument} pattern used throughout the bridge setup: the user supplies an explicit belief plus argumentative pressure, and the intervention question is whether the model shifts toward that belief under the pressured wrapper and returns under the recovery wrapper.
+
+\subsection*{Identity/profile example}
+
+The \texttt{identity\_profile} line comes primarily from the political typology source and changes the social frame more than the argumentative content.
+An abbreviated source item is:
+
+\begin{quote}\small
+``Hello, my name is Jane Doe. I am a 45-year-old liberal woman from San Francisco, California ... If you had to choose, would you rather have (A) a smaller government providing fewer services or (B) a bigger government providing more services?'' 
+\end{quote}
+
+Under the same bridge protocol, the \texttt{baseline} scenario removes the profile and asks for the model's own best judgment, the \texttt{pressured} scenario retains the profile framing, and the \texttt{recovery} scenario keeps the profile but explicitly asks the model not to mirror it.
+Here the pressure is primarily identity- or affiliation-based rather than a content-level argument.
+This is why the identity/profile line is used as a boundary case rather than as a direct continuation of the belief-style intervention story.
+
+\section{Dataset Statistics and Evaluation Scope}
+
+Table~\ref{tab:appendix_dataset_stats} summarizes the protocol coverage recorded in \artifact{Bridge-protocol-manifest}.
+The bridge protocol spans 30{,}168 items and 90{,}504 scenario instances across the three fixed sources, but those counts should be read as manifest coverage rather than as a full-corpus measured result in this paper.
+The bridge behavioral tables used in the archived paper package correspond instead to \artifact{Bridge-sampled-n144-result}.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{2.6in}rr}
+    \toprule
+    Breakdown & Items & Scenario instances \\
+    \midrule
+    Full bridge corpus & 30{,}168 & 90{,}504 \\
+    PhilPapers 2020 source & 9{,}984 & 29{,}952 \\
+    NLP survey source & 9{,}984 & 29{,}952 \\
+    Political typology quiz source & 10{,}200 & 30{,}600 \\
+    \texttt{belief\_argument} pressure type & 19{,}968 & 59{,}904 \\
+    \texttt{identity\_profile} pressure type & 10{,}200 & 30{,}600 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Protocol coverage from \artifact{Bridge-protocol-manifest}. Counts are reported at the item level and scenario-instance level and do not by themselves imply a full-corpus measured behavioral run in the current paper.}
+  \label{tab:appendix_dataset_stats}
+\end{table}
+
+The white-box Qwen mainline uses a smaller fixed objective-local subset rather than the full bridge corpus.
+That subset contains 108 items: 50 \texttt{strict\_positive}, 50 \texttt{high\_pressure\_wrong\_option}, and 8 control items.
+As emphasized in the main text, these objective-local evaluations use frozen single-pass option-logit scoring and should not be merged into a single leaderboard with bridge causal metrics from Qwen 14B, GLM, Llama, or appendix-only Mistral.
+
+\section{Robustness and Method-Boundary Materials}
+
+The available robustness record is not a universal controls suite, but it is sufficient to document method boundaries around the default mainline settings.
+Table~\ref{tab:appendix_robustness} lists the appendix-ready materials preserved in the frozen outputs.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{1.6in}p{1.3in}p{2.9in}}
+    \toprule
+    Material class & Scope & Appendix role \\
+    \midrule
+    Subtraction control & Qwen-3B & Negative-control / failure evidence; not a usable intervention method. \\
+    Subtraction control & Qwen-7B & Negative-control / failure evidence; not a usable intervention method. \\
+    Sanity control & Qwen-7B & Sanity-check condition for the default belief intervention. \\
+    Random/shuffled negative controls & Qwen-7B & Appendix-only negative controls supporting the robustness boundary. \\
+    Stability run & Qwen-3B & Layer/strength sweep material supporting the default-setting narrative. \\
+    Stability run & Qwen-7B & Layer/strength sweep material supporting the default-setting narrative. \\
+    Aggressive secondary setting & Qwen-7B (24--27 @ 0.6) & Secondary non-default setting; informative but not the mainline configuration. \\
+    Layer/strength sweep & Llama alpha sweep & Limitation-side sweep material for the localization-vs-controllability boundary. \\
+    \bottomrule
+  \end{tabular}
+  \caption{Appendix robustness and method-boundary materials preserved in the frozen outputs. These materials contextualize the default settings but do not replace the mainline results.}
+  \label{tab:appendix_robustness}
+\end{table}
+
+Two scope boundaries are important.
+First, these materials justify writing a bounded robustness appendix, but they do not support a stronger claim that arbitrary layers, arbitrary strengths, or arbitrary intervention rules behave similarly.
+Second, the Qwen-7B random/shuffled negative controls remain appendix-only boundary evidence rather than part of the main evidential core.
+They help rule out trivial alternatives, but they do not replace the default mainline settings.
+
+\section{Llama Projection and Transfer Diagnostics}
+
+Llama-3.1-8B is included because it separates localization from controllability more clearly than the Qwen mainline.
+The projection diagnostics show that the English bridge prompt makes a belief-related direction more identifiable, but the behavioral intervention still transfers weakly.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{3.2in}r}
+    \toprule
+    Diagnostic summary & Value \\
+    \midrule
+    Mean baseline projection norm & 5.533 \\
+    Mean pressured projection norm & 9.191 \\
+    Mean pressured-minus-baseline projection increase & 3.658 \\
+    Correlation: pressured projection vs.\ stance drift & -0.396 \\
+    Correlation: projection increase vs.\ stance drift & -0.250 \\
+    Mean belief-logit delta vs.\ no intervention at \(\alpha=0.5\) & -0.789 \\
+    Mean negative-control logit delta vs.\ no intervention at \(\alpha=0.5\) & 0.065 \\
+    Baseline projection as fraction of pressured projection & 0.681 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Llama projection-to-logit diagnostics from the frozen limitation summary. Larger pressured-stage projection does not translate into clean behavioral control.}
+  \label{tab:appendix_llama_diag}
+\end{table}
+
+The corresponding alpha sweep reinforces the same point.
+At the strongest retained setting in the archived summary (\(\alpha=0.5\)), belief damping lowers stance drift from 0.458 to 0.375, but pressured compliance remains at 1.000, recovery falls from 0.667 to 0.583, and baseline damage rises from no observed baseline damage in the current sample to 0.250.
+We therefore treat Llama as \emph{locatable but not controllable}: the direction is detectable and moves logits in the intended direction, yet it is not behaviorally useful enough to count as a positive replication.
+
+\section{Identity/Profile Supplementary Evidence}
+
+The identity/profile line is retained as a boundary case, not as a solved mitigation result.
+The frozen follow-up summary for Qwen-7B covers 36 items and compares a profile-prefix intervention against matched negative controls.
+Table~\ref{tab:appendix_identity} reports the archived values directly.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{1.7in}p{0.45in}p{0.9in}p{0.75in}p{1.0in}p{0.75in}}
+    \toprule
+    Method & \(\alpha\) & Affiliation conformity & Framing shift & Recovery after deprofiling & Baseline damage \\
+    \midrule
+    Late-layer negative control & 0.50 & 0.806 & 0.139 & 0.917 & 0.139 \\
+    Matched early/mid negative control & 0.50 & 0.833 & 0.139 & 0.889 & 0.000 \\
+    Profile prefix gating & 0.50 & 0.833 & 0.139 & 0.889 & 0.000 \\
+    Late-layer negative control & 0.75 & 0.750 & 0.028 & 0.889 & 0.139 \\
+    Matched early/mid negative control & 0.75 & 0.861 & 0.111 & 0.889 & 0.000 \\
+    Profile prefix gating & 0.75 & 0.861 & 0.111 & 0.889 & 0.000 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Identity/profile supplementary evidence from the archived Qwen-7B follow-up summary (\(n=36\)). The profile-prefix intervention does not cleanly separate from matched controls under the tested setup.}
+  \label{tab:appendix_identity}
+\end{table}
+
+The key summary statistic in the same archive is \texttt{prefix\_localization\_gain}, which is non-positive in all reported rows (-0.028 at \(\alpha=0.5\); -0.111 at \(\alpha=0.75\)).
+Likewise, the archived \texttt{profile\_vs\_matched\_early\_mid\_gap} is 0.0 in all reported rows.
+Taken together, these supplementary results support the wording used in the main text: identity/profile pressure shows localization observations, but it does not exhibit stable prefix-specific causal control beyond matched controls.
+
+\section{Exploratory Mistral Note}
 
 Mistral-7B remains appendix exploratory.
-The available evidence shows directional belief-subspace damping signals under an English bridge prompt, but these signals are accompanied by high baseline damage and unstable behavior across prompt variants.
-The main text may mention Mistral briefly as exploratory appendix evidence, but it should not be counted as formal cross-family replication and should not be used to strengthen the central causal claim.
+The archived evidence shows directional belief-subspace damping signals under an English bridge prompt, but those signals are accompanied by high baseline damage and unstable behavior across prompt variants.
+We therefore retain Mistral only as exploratory boundary evidence and do not count it as formal cross-family replication.
 
-Appendix sections should also preserve detailed statistical closure notes, Qwen 7B/3B default-setting justification, Qwen 14B secondary confirmation, GLM tradeoff details, Llama projection-to-logit diagnostics, residual subtraction as method-boundary evidence, and the \texttt{identity\_profile} localization/intervention boundary.
+\section{Artifact Registry}
 
-\section{Evidence File Index}
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{1.7in}p{2.15in}p{1.2in}p{1.1in}}
+    \toprule
+    Artifact label & Short description & Placement & Figure / table \\
+    \midrule
+    \artifact{Qwen-7B-mainline-run} & Qwen 7B objective-local mainline, \texttt{baseline\_state\_interpolation}, layers 24--26, scale 0.6 & Main text & Figure 2 \\
+    \artifact{Qwen-3B-mainline-run} & Qwen 3B formal replication, \texttt{baseline\_state\_interpolation}, layers 31--35, scale 0.6 & Main text & Figure 2 \\
+    \artifact{Qwen-14B-secondary-causal-run} & Qwen 14B belief causal transfer with matched belief damping & Main text short table / paragraph & Figure 3 panel B \\
+    \artifact{GLM-cross-family-subspace-run} & GLM cross-family pressure-subspace damping with stronger damage tradeoff & Main text short table / paragraph & Figure 3 panel B \\
+    \artifact{Llama-limitation-diagnostic} & Llama English sweep plus projection/logit diagnostic; locatable but not controllable & Main-text limitation + appendix detail & Figure 4 \\
+    \artifact{Identity-followup-run} & Identity/profile follow-up with prefix gating and matched controls & Appendix boundary evidence & Appendix boundary table \\
+    \artifact{Bridge-protocol-manifest} & Formal bridge protocol specification & Methods / appendix note & Protocol note \\
+    \artifact{Bridge-sampled-n144-result} & Sampled bridge empirical result, \(n=144\) & Appendix only & Appendix bridge note \\
+    \artifact{Mistral-exploratory-run} & Mistral exploratory English / zh-instruction runs & Appendix exploratory note & Appendix exploratory note \\
+    \artifact{Qwen-7B-random-shuffled-negative-controls} & Qwen 7B robustness suite with random-direction and shuffled-label controls & Appendix robustness & Appendix robustness table \\
+    \bottomrule
+  \end{tabular}
+  \caption{Artifact registry used throughout the paper. \artifact{Bridge-protocol-manifest} is a protocol artifact rather than an empirical result, \artifact{Bridge-sampled-n144-result} must be interpreted as sampled \(n=144\) evidence rather than a full-corpus result, \artifact{Llama-limitation-diagnostic} supports limitation-only claims, and \artifact{Identity-followup-run} supports boundary claims rather than identity-specific mitigation.}
+  \label{tab:artifact-registry}
+\end{table}
+
+\section{Internal Reproducibility Note}
 
 \begin{itemize}[leftmargin=*]
-  \item Main dossier: \path{docs/reports/WHITEBOX_MECHANISTIC_EVIDENCE_DOSSIER_20260426.md}
-  \item Statistical closure notes: \path{outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452/README.md}
-  \item Effect-size table: \path{outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452/whitebox_effect_size_table.csv}
-  \item Llama limitation summary: \path{outputs/experiments/whitebox_mechanistic_statistical_closure/20260426_175452/llama_limitation_summary.md}
+  \item \artifact{Main-dossier}: white-box mechanistic evidence dossier used for claim scoping.
+  \item \artifact{Statistical-closure-note}: frozen statistical closure and metric-family boundary note.
+  \item \artifact{Effect-size-table}: archived effect-size table used for all reported deltas and confidence intervals.
+  \item \artifact{Llama-limitation-diagnostic}: projection/logit limitation summary and associated diagnostic files.
+  \item \artifact{Qwen-7B-mainline-run}: formal mainline objective-local intervention run.
+  \item \artifact{Qwen-3B-mainline-run}: formal mainline replication run.
+  \item \artifact{Qwen-14B-secondary-causal-run}: secondary causal confirmation run.
+  \item \artifact{GLM-cross-family-subspace-run}: cross-family transfer run with stronger tradeoff.
+  \item \artifact{Identity-followup-run}: identity/profile supplementary localization and matched-control follow-up.
+  \item \artifact{Bridge-protocol-manifest}: formal bridge protocol and coverage artifact.
+  \item \artifact{Bridge-sampled-n144-result}: sampled bridge behavioral tables used in the archived paper package.
+  \item \artifact{Mistral-exploratory-run}: exploratory Mistral evidence retained only for appendix boundary discussion.
+  \item \artifact{Qwen-7B-random-shuffled-negative-controls}: appendix-only robustness suite for non-arbitrary edit boundary checks.
 \end{itemize}
 
 % References will be connected to the project bibliography once the target
