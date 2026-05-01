@@ -4,7 +4,7 @@ set -euo pipefail
 cd /Users/shiqi/code/graduation-project
 mkdir -p .mplconfig
 
-echo "Starting pressure_subspace_damping: Qwen2.5-7B, layers=24-26"
+echo "Starting exploratory mixed-strata pressure_subspace_damping sweep: Qwen2.5-7B, layers=24-26"
 
 MPLCONFIGDIR=/Users/shiqi/code/graduation-project/.mplconfig \
 ./.venv/bin/python scripts/run_pressure_subspace_damping.py \

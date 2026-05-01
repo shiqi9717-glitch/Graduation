@@ -472,14 +472,39 @@ def _summarize_comparisons(comparisons: Sequence[Dict[str, Any]]) -> List[Dict[s
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Minimal pressure_subspace_damping pipeline.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Exploratory pressure_subspace_damping sweep over mixed source/pressure strata. "
+            "This entry point samples every available stratum and runs multi-k / multi-alpha transfer tests. "
+            "For clean source-specific belief causal transfer such as "
+            "philpapers2020 -> nlp_survey with explicit train/eval sizes, use "
+            "scripts/run_belief_causal_transfer.py instead."
+        )
+    )
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--device", default="mps", choices=["auto", "cpu", "mps"])
     parser.add_argument("--dtype", default="float32")
-    parser.add_argument("--layers", required=True, help="Layer window, e.g. 24-26 or 31-35.")
+    parser.add_argument(
+        "--layers",
+        required=True,
+        help=(
+            "Layer window for the exploratory mixed-strata sweep, e.g. 24-26 or 31-35. "
+            "This script does not accept --train-source/--eval-source."
+        ),
+    )
     parser.add_argument("--output-root", default="outputs/experiments/pressure_subspace_damping")
-    parser.add_argument("--items-per-stratum", type=int, default=48)
-    parser.add_argument("--train-per-stratum", type=int, default=24)
+    parser.add_argument(
+        "--items-per-stratum",
+        type=int,
+        default=48,
+        help="Total sampled items per (source, pressure_type) stratum for the exploratory sweep.",
+    )
+    parser.add_argument(
+        "--train-per-stratum",
+        type=int,
+        default=24,
+        help="Number of train items per stratum inside the exploratory mixed sweep.",
+    )
     parser.add_argument("--seed", type=int, default=20260423)
     parser.add_argument("--k-values", default="1,2,4,8")
     parser.add_argument("--intervention-k-values", default="1,2,4")

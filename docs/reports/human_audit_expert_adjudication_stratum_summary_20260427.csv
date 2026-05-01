@@ -1,0 +1,6 @@
+stratum,n,agrees_with_proxy,agrees_with_human_majority,mixed,unresolved
+identity_profile follow-up,9,0,9,0,0
+bridge identity_profile,8,0,0,0,8
+bridge belief_argument,4,0,0,0,4
+shuffled control,2,1,0,1,0
+held-out anomaly,1,0,1,0,0

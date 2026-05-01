@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Sequence
@@ -189,6 +190,151 @@ def _summary_rows(comparisons: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]
     return rows
 
 
+def _projection_norm(hidden_state: np.ndarray, mean_baseline: np.ndarray, components: np.ndarray, k: int) -> float:
+    kk = min(int(k), int(components.shape[0]))
+    if kk <= 0:
+        return 0.0
+    centered = np.asarray(hidden_state - mean_baseline, dtype=np.float32)
+    coeffs = np.asarray(components[:kk] @ centered, dtype=np.float32)
+    return float(np.linalg.norm(coeffs))
+
+
+def _safe_corr(xs: Sequence[float], ys: Sequence[float]) -> float:
+    if len(xs) < 2 or len(ys) < 2:
+        return float("nan")
+    x = np.asarray(xs, dtype=np.float32)
+    y = np.asarray(ys, dtype=np.float32)
+    if float(np.std(x)) == 0.0 or float(np.std(y)) == 0.0:
+        return float("nan")
+    return float(np.corrcoef(x, y)[0, 1])
+
+
+def _round_or_nan(value: float) -> float:
+    return float(value) if not math.isnan(float(value)) else float("nan")
+
+
+def _projection_alignment_outputs(
+    *,
+    eval_pairs: Sequence[Dict[str, Any]],
+    records: Sequence[Dict[str, Any]],
+    artifact: Dict[str, Any],
+    layers: Sequence[int],
+    k: int,
+    alpha: float,
+    comparisons: Sequence[Dict[str, Any]],
+    intervention_records: Sequence[Dict[str, Any]],
+    output_dir: Path,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    by_key = base._records_by_key(records)
+    comparison_map = {
+        (str(row["item_id"]), str(row["method"]), float(row.get("alpha", alpha))): dict(row)
+        for row in comparisons
+    }
+    record_map = {
+        (str(row["item_id"]), str(row["method"]), str(row["scenario"]), float(row.get("alpha", alpha))): dict(row)
+        for row in intervention_records
+    }
+    diagnostic_rows: list[dict[str, Any]] = []
+    for item in eval_pairs:
+        item_id = str(item["item_id"])
+        belief_proj_baseline_layers: list[float] = []
+        belief_proj_pressured_layers: list[float] = []
+        belief_proj_recovery_layers: list[float] = []
+        negative_proj_pressured_layers: list[float] = []
+        for layer in layers:
+            belief_layer = artifact["matched_belief_subspace"]["layers"][int(layer)]
+            negative_layer = artifact["matched_negative_control"]["layers"][int(layer)]
+            baseline_vec = _load_vector(by_key[(item_id, "baseline")], int(layer))
+            pressured_vec = _load_vector(by_key[(item_id, "pressured")], int(layer))
+            recovery_vec = _load_vector(by_key[(item_id, "recovery")], int(layer))
+            belief_proj_baseline_layers.append(
+                _projection_norm(baseline_vec, belief_layer["mean_baseline"], belief_layer["components"], int(k))
+            )
+            belief_proj_pressured_layers.append(
+                _projection_norm(pressured_vec, belief_layer["mean_baseline"], belief_layer["components"], int(k))
+            )
+            belief_proj_recovery_layers.append(
+                _projection_norm(recovery_vec, belief_layer["mean_baseline"], belief_layer["components"], int(k))
+            )
+            negative_proj_pressured_layers.append(
+                _projection_norm(pressured_vec, negative_layer["mean_baseline"], negative_layer["components"], int(k))
+            )
+
+        no_comp = comparison_map.get((item_id, "no_intervention", float(alpha)))
+        belief_comp = comparison_map.get((item_id, "matched_belief_subspace_damping", float(alpha)))
+        neg_comp = comparison_map.get((item_id, "matched_negative_control", float(alpha)))
+        no_pressured = record_map.get((item_id, "no_intervention", "pressured", float(alpha)), {})
+        belief_pressured = record_map.get((item_id, "matched_belief_subspace_damping", "pressured", float(alpha)), {})
+        neg_pressured = record_map.get((item_id, "matched_negative_control", "pressured", float(alpha)), {})
+
+        no_margin = no_pressured.get("correct_wrong_margin")
+        belief_margin = belief_pressured.get("correct_wrong_margin")
+        neg_margin = neg_pressured.get("correct_wrong_margin")
+        diagnostic_rows.append(
+            {
+                "item": item_id,
+                "base_proj": float(np.mean(belief_proj_baseline_layers)),
+                "press_proj": float(np.mean(belief_proj_pressured_layers)),
+                "rec_proj": float(np.mean(belief_proj_recovery_layers)),
+                "pressure_minus_base_proj": float(np.mean(belief_proj_pressured_layers) - np.mean(belief_proj_baseline_layers)),
+                "neg_press_proj": float(np.mean(negative_proj_pressured_layers)),
+                "stance_drift": float(bool(no_comp.get("stance_drift"))) if no_comp else float("nan"),
+                "pressured_compliance": float(bool(no_comp.get("pressured_compliance"))) if no_comp else float("nan"),
+                "recovered": float(bool(no_comp.get("recovered"))) if no_comp else float("nan"),
+                "drift_after": float(bool(belief_comp.get("stance_drift"))) if belief_comp else float("nan"),
+                "compliance_after": float(bool(belief_comp.get("pressured_compliance"))) if belief_comp else float("nan"),
+                "recovered_after": float(bool(belief_comp.get("recovered"))) if belief_comp else float("nan"),
+                "baseline_damage": float(bool(belief_comp.get("baseline_damage"))) if belief_comp else float("nan"),
+                "belief_logit_delta_vs_no": (
+                    float(belief_margin) - float(no_margin)
+                    if belief_margin is not None and no_margin is not None
+                    else float("nan")
+                ),
+                "negative_logit_delta_vs_no": (
+                    float(neg_margin) - float(no_margin)
+                    if neg_margin is not None and no_margin is not None
+                    else float("nan")
+                ),
+            }
+        )
+
+    press_proj = [row["press_proj"] for row in diagnostic_rows]
+    base_proj = [row["base_proj"] for row in diagnostic_rows]
+    proj_delta = [row["pressure_minus_base_proj"] for row in diagnostic_rows]
+    stance = [row["stance_drift"] for row in diagnostic_rows if not math.isnan(row["stance_drift"])]
+    stance_press = [row["press_proj"] for row in diagnostic_rows if not math.isnan(row["stance_drift"])]
+    stance_delta = [row["pressure_minus_base_proj"] for row in diagnostic_rows if not math.isnan(row["stance_drift"])]
+    comp_press = [row["press_proj"] for row in diagnostic_rows if not math.isnan(row["pressured_compliance"])]
+    comp_delta = [row["pressure_minus_base_proj"] for row in diagnostic_rows if not math.isnan(row["pressured_compliance"])]
+    comp_vals = [row["pressured_compliance"] for row in diagnostic_rows if not math.isnan(row["pressured_compliance"])]
+    belief_deltas = [row["belief_logit_delta_vs_no"] for row in diagnostic_rows if not math.isnan(row["belief_logit_delta_vs_no"])]
+    negative_deltas = [row["negative_logit_delta_vs_no"] for row in diagnostic_rows if not math.isnan(row["negative_logit_delta_vs_no"])]
+
+    summary = {
+        "num_eval_items": len(eval_pairs),
+        "mean_baseline_projection_norm": float(np.mean(base_proj)) if base_proj else float("nan"),
+        "mean_pressured_projection_norm": float(np.mean(press_proj)) if press_proj else float("nan"),
+        "mean_projection_increase_pressured_minus_baseline": float(np.mean(proj_delta)) if proj_delta else float("nan"),
+        "corr_pressured_projection_with_stance_drift": _round_or_nan(_safe_corr(stance_press, stance)),
+        "corr_projection_increase_with_stance_drift": _round_or_nan(_safe_corr(stance_delta, stance)),
+        "corr_pressured_projection_with_compliance": _round_or_nan(_safe_corr(comp_press, comp_vals)),
+        "corr_projection_increase_with_compliance": _round_or_nan(_safe_corr(comp_delta, comp_vals)),
+        f"mean_belief_logit_delta_vs_no_alpha_{str(alpha).replace('.', 'p')}": float(np.mean(belief_deltas)) if belief_deltas else float("nan"),
+        f"mean_negative_logit_delta_vs_no_alpha_{str(alpha).replace('.', 'p')}": float(np.mean(negative_deltas)) if negative_deltas else float("nan"),
+        "num_logit_delta_items": len(belief_deltas),
+        "baseline_projection_as_fraction_of_pressured_projection": (
+            float(np.mean(base_proj) / np.mean(press_proj)) if press_proj and float(np.mean(press_proj)) != 0.0 else float("nan")
+        ),
+        "interpretation_hint": (
+            "Higher pressured projection than baseline suggests a locatable belief-pressure direction. "
+            "Projection-behavior correlations indicate whether that direction aligns with the causal behavior axis."
+        ),
+    }
+    save_json(output_dir / "projection_alignment_summary.json", summary)
+    write_csv(output_dir / "projection_alignment_diagnostic.csv", diagnostic_rows)
+    return summary, diagnostic_rows
+
+
 def _parse_alpha_values(args: argparse.Namespace) -> List[float]:
     if getattr(args, "alpha_values", ""):
         values = [float(value.strip()) for value in str(args.alpha_values).split(",") if value.strip()]
@@ -200,24 +346,36 @@ def _parse_alpha_values(args: argparse.Namespace) -> List[float]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Generic minimal belief_argument causal-transfer validation.")
+    parser = argparse.ArgumentParser(
+        description=(
+            "Clean source-specified belief causal transfer validation. "
+            "Use this script when you need an explicit train source, eval source, "
+            "pressure type, train_n, eval_n, k, and alpha, e.g. "
+            "philpapers2020 -> nlp_survey on belief_argument."
+        )
+    )
     parser.add_argument("--model-name", required=True)
     parser.add_argument("--device", default="mps", choices=["auto", "cpu", "mps"])
     parser.add_argument("--dtype", default="auto")
-    parser.add_argument("--layers", required=True)
-    parser.add_argument("--train-source", default="philpapers2020")
-    parser.add_argument("--eval-source", default="nlp_survey")
-    parser.add_argument("--pressure-type", default="belief_argument")
+    parser.add_argument("--layers", required=True, help="Target layer window, e.g. 24-26, 31-35, or 40-47.")
+    parser.add_argument("--train-source", default="philpapers2020", help="Source split used to estimate the matched belief subspace.")
+    parser.add_argument("--eval-source", default="nlp_survey", help="Held-out source split used for the causal-transfer evaluation.")
+    parser.add_argument("--pressure-type", default="belief_argument", help="Pressure family to keep in the clean train/eval protocol.")
     parser.add_argument(
         "--prompt-variant",
         default="original",
         choices=["original", "english", "en", "chinese", "zh", "zh_instruction"],
         help="Prompt language/instruction variant for cross-language bridge checks.",
     )
-    parser.add_argument("--train-n", type=int, default=24)
-    parser.add_argument("--eval-n", type=int, default=24)
-    parser.add_argument("--k", type=int, default=2)
-    parser.add_argument("--alpha", type=float, default=0.75)
+    parser.add_argument("--train-n", type=int, default=24, help="Number of train items sampled from --train-source.")
+    parser.add_argument(
+        "--eval-n",
+        type=int,
+        default=24,
+        help="Number of eval items sampled from --eval-source. Set to 0 for train-only layer-wise subspace export.",
+    )
+    parser.add_argument("--k", type=int, default=2, help="Number of PCA components kept in the matched belief subspace.")
+    parser.add_argument("--alpha", type=float, default=0.75, help="Single damping strength for the clean protocol.")
     parser.add_argument(
         "--alpha-values",
         default="",
@@ -300,33 +458,48 @@ def main() -> int:
     alpha_values = _parse_alpha_values(args)
     all_intervention_records: List[Dict[str, Any]] = []
     all_comparisons: List[Dict[str, Any]] = []
-    for alpha in alpha_values:
-        alpha_prefix = f"belief_causal_alpha_{str(alpha).replace('.', 'p')}"
-        intervention_records, comparisons_raw = base._run_eval(
-            runner=runner,
-            eval_pairs=eval_pairs,
-            records=hidden_records,
-            artifact=artifact,
-            layers=layers,
-            k=int(args.k),
-            alpha=float(alpha),
-            output_dir=output_dir,
-            logger=logger,
-            flush_every=int(args.flush_every),
-            output_prefix=alpha_prefix,
-        )
-        comparisons = base._add_baseline_damage(comparisons_raw)
-        for row in intervention_records:
-            row["alpha"] = float(alpha) if row.get("method") != "no_intervention" else float(alpha)
-        for row in comparisons:
-            row["alpha"] = float(alpha)
-        all_intervention_records.extend(intervention_records)
-        all_comparisons.extend(comparisons)
+    if eval_pairs:
+        for alpha in alpha_values:
+            alpha_prefix = f"belief_causal_alpha_{str(alpha).replace('.', 'p')}"
+            intervention_records, comparisons_raw = base._run_eval(
+                runner=runner,
+                eval_pairs=eval_pairs,
+                records=hidden_records,
+                artifact=artifact,
+                layers=layers,
+                k=int(args.k),
+                alpha=float(alpha),
+                output_dir=output_dir,
+                logger=logger,
+                flush_every=int(args.flush_every),
+                output_prefix=alpha_prefix,
+            )
+            comparisons = base._add_baseline_damage(comparisons_raw)
+            for row in intervention_records:
+                row["alpha"] = float(alpha) if row.get("method") != "no_intervention" else float(alpha)
+            for row in comparisons:
+                row["alpha"] = float(alpha)
+            all_intervention_records.extend(intervention_records)
+            all_comparisons.extend(comparisons)
     comparisons = all_comparisons
     summary = _summary_rows(comparisons)
     write_jsonl(output_dir / "belief_causal_records.jsonl", all_intervention_records)
     write_jsonl(output_dir / "belief_causal_comparisons.jsonl", comparisons)
     write_csv(output_dir / "belief_causal_summary.csv", summary)
+    projection_summary = None
+    projection_rows: List[Dict[str, Any]] = []
+    if eval_pairs:
+        projection_summary, projection_rows = _projection_alignment_outputs(
+            eval_pairs=eval_pairs,
+            records=hidden_records,
+            artifact=artifact,
+            layers=layers,
+            k=int(args.k),
+            alpha=float(alpha_values[0]),
+            comparisons=comparisons,
+            intervention_records=all_intervention_records,
+            output_dir=output_dir,
+        )
     manifest = {
         "pipeline": "belief_causal_transfer_v1",
         "model_name": model_name,
@@ -351,6 +524,10 @@ def main() -> int:
             "hidden_state_records": str((output_dir / "hidden_state_records.jsonl").resolve()),
         },
     }
+    if projection_summary is not None:
+        manifest["outputs"]["projection_alignment_summary_json"] = str((output_dir / "projection_alignment_summary.json").resolve())
+        manifest["outputs"]["projection_alignment_diagnostic_csv"] = str((output_dir / "projection_alignment_diagnostic.csv").resolve())
+        manifest["projection_alignment_summary"] = projection_summary
     save_json(output_dir / "belief_causal_run.json", manifest)
     print(json.dumps({"output_dir": str(output_dir.resolve()), "train_n": len(train_pairs), "eval_n": len(eval_pairs)}, ensure_ascii=False, indent=2))
     return 0

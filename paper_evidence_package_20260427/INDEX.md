@@ -18,6 +18,9 @@
 | Mechanistic support | Qwen 7B late-layer drift is localizable | `results_mainline/qwen7b_mechanistic_summary.json` | Mainline mechanistic support | ready | generalization mechanistic summary |
 | Mechanistic support | Qwen 3B late-layer drift is localizable | `results_mainline/qwen3b_mechanistic_summary.json` | Mainline mechanistic support | ready | replication mechanistic summary |
 | Cross-scale support | Qwen 14B is secondary causal confirmation | `results_transfer/qwen14b_secondary_confirmation_run/qwen14b_belief_causal_summary.csv` | Table 2 / Figure 3 | ready | 不升级成新的 mainline |
+| Appendix / Qwen clean | Qwen 3B clean protocol provides positive confirmation under the clean bridge protocol | `results_transfer/qwen3b_clean_positive_confirmation_run/belief_causal_summary.csv` | Appendix clean-protocol note | ready | drift/compliance 明显下降，recovery 小幅提升，negative control 未复现收益 |
+| Appendix / Qwen clean | Qwen 7B clean protocol is specific but behaviorally weak | `results_transfer/qwen7b_clean_boundary_run/belief_causal_summary.csv` | Appendix clean-protocol note | ready | 只支持 specific but behaviorally weak；不写成 positive confirmation |
+| Appendix / Qwen clean | Qwen 14B n=48 clean protocol is cautionary / boundary evidence | `results_transfer/qwen14b_n48_cautionary_run/belief_causal_summary.csv` | Appendix clean-protocol note | ready | harmful / not recommended；不再写成 strengthens the 14B line |
 | Cross-family support | GLM is positive replication with stronger tradeoff | `results_transfer/glm4_9b_tradeoff_run/subspace_intervention_summary.csv` | Table 2 / Figure 3 | ready | 必须保留 baseline damage |
 | Cross-model summary | Bridge-causal panel source data | `tables/table2_source_data.csv` | Table 2 | ready | 对应 Figure 3 panel B |
 | Cross-model summary | Split-panel tradeoff data | `figures/figure3_panelA_qwen_proxy_tradeoff.csv` | Figure 3 | ready | Qwen proxy panel |
@@ -43,5 +46,7 @@
 | Human audit | White-box human audit bundle | `human_audit/whitebox_human_audit_bundle` | Appendix human audit | ready | 包含 rows、manifest、guidelines |
 | Human audit | Annotation instructions | `human_audit/annotation_guidelines.md` | Appendix human audit | ready | 给复核人直接用 |
 | Appendix / Supporting note | Objective-local metric family, updated controls + held-out support, and GLM sample-size comparability boundaries | `appendix_materials/whitebox_supporting_note.md` | Appendix note / evidence boundary note | ready | 用于补充主文与附录的边界说明，不构成新主结果 |
+| Appendix / Metric audit | Metric numerator/denominator, bootstrap/CI, and held-out leakage audit | `appendix_materials/metric_audit_note_20260501.md` | Appendix audit note | ready | held-out 和 formal controls 的 CI 细节可保守确认；frozen closure bootstrap 仍不可写 fully verified |
+| Appendix / Qwen clean note | Clean-protocol Qwen 3B/7B/14B belief causal transfer boundary note | `appendix_materials/qwen_clean_protocol_appendix_note.md` | Appendix note / evidence boundary note | ready | 统一收束 3B positive confirmation、7B weak/mixed、14B n=48 cautionary |
 | Appendix / Internal note | Internal reproducibility note | `appendix_materials/internal_reproducibility_note.md` | Appendix reproducibility | ready | 本 package 内生成说明 |
 | Appendix / Draft lineage | Frozen dossier and writing lineage | `appendix_materials/frozen_evidence_dossier.md` | Appendix writing support | ready | 写作部门上游锚点 |

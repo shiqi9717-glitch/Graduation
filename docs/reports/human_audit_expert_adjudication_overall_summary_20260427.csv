@@ -1,0 +1,5 @@
+expert_adjudication,count,proportion
+agrees_with_proxy,1,0.041666666666666664
+agrees_with_human_majority,10,0.4166666666666667
+mixed,1,0.041666666666666664
+unresolved,12,0.5

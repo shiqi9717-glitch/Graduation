@@ -21,17 +21,22 @@
 ## Required Boundary Conditions
 
 - Qwen 3B / 7B 的主文数字是 objective-local proxy，不是 bridge-causal leaderboard。
+- Qwen 7B held-out 只能作为 robustness-side validation，即使泄漏审计当前判断为 clean，也不能升级成 pre-registered clean split main result。
 - Qwen 14B 只作为 secondary causal confirmation。
 - GLM 只作为 positive replication with stronger tradeoff。
 - Llama 只作为 weak replication / limitation，不继续建议 alpha / k / layer sweep。
 - Mistral 只作为 appendix exploratory，不继续建议 sweep。
 - identity/profile 只作为 weak mechanistic observation / boundary。
+- held-out objective-local export 的 CI 可以保守写成 `item-level percentile bootstrap, 2000 iterations`。
+- formal controls aggregate 的 CI 可以保守写成 `shared sample ID item-level percentile bootstrap, 2000 iterations`。
+- frozen `whitebox_effect_size_table.csv` 的 bootstrap 细节在当前审计输入下仍只能写成 `unable to confirm`，不要写成 `fully verified`。
 
 ## Key Frozen Anchors
 
 - Statistical closure:
   - `configs/statistical_closure_README.md`
   - `tables/whitebox_effect_size_table.csv`
+  - `appendix_materials/metric_audit_note_20260501.md`
 
 - Figure assets:
   - `figures/figure2_qwen_mainline_effect_ci.csv`
