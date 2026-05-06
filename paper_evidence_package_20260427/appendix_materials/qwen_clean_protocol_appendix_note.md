@@ -19,8 +19,8 @@
 
 定位：
 
-- `positive confirmation`
-- 可作为 clean protocol 下的副主线支持
+- `appendix-level positive confirmation / secondary support under the clean protocol`
+- 这是 less-oracle `pressure_subspace_damping` 机制线的副证据，不替代 Qwen `baseline_state_interpolation` mainline
 
 delta vs `no_intervention`：
 

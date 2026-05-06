@@ -16,7 +16,7 @@
 
 主 claim 应优先建立在以下结构上：
 - `baseline_state_interpolation` 作为主 baseline intervention
-- `pressure_subspace_damping` 作为 less-oracle 副主线
+- `pressure_subspace_damping` 作为 less-oracle mechanistic probe / secondary line
 - Qwen 3B / 7B projection-to-logit diagnostic 作为 mechanistic support
 - Qwen 3B / 7B layer-wise clean subspace diagnostic 作为 localization support
 
@@ -83,9 +83,9 @@ Qwen 3B strongest band：
 ### 3.3 Pressure-subspace clean protocol
 
 当前最稳写法：
-- 3B: strongest positive confirmation
-- 7B: weak / mixed support
-- 14B: harmful or over-strong; not recommended as positive replication
+- 3B: appendix-level secondary positive support under the clean protocol
+- 7B: weak / boundary evidence
+- 14B: cautionary / boundary evidence
 
 ## 4. Boundary / Do Not Overclaim
 
@@ -93,7 +93,7 @@ Qwen 3B strongest band：
 - `human audit provides full human validation`
 - `Qwen 14B cleanly replicates the pressure-subspace intervention`
 - `Llama is a strong positive replication`
-- `Qwen 7B pressure_subspace_damping is a strong success`
+- `Qwen 7B pressure_subspace_damping is a standalone benchmark success`
 - `Table 4 exploratory pilot is a full intervention benchmark`
 
 推荐替代表述：

@@ -822,6 +822,132 @@ class LocalProbeRunner:
             "top_token_logits": self._top_token_logits(last_logits, self.config.top_k),
         }
 
+    def generate_with_final_token_residual_patches(
+        self,
+        *,
+        prompt: str,
+        layer_patch_map: Dict[int, Any],
+        max_new_tokens: int = 150,
+        temperature: float = 0.0,
+        do_sample: bool = False,
+        stop_token_ids: Sequence[int] | None = None,
+        use_cache: bool = False,
+        patch_generation_steps: bool = True,
+        patch_step_count: int | None = None,
+        repetition_penalty: float = 1.0,
+    ) -> Dict[str, Any]:
+        self.load()
+        assert self._model is not None
+        assert self._tokenizer is not None
+        assert self._device is not None
+        if use_cache:
+            raise ValueError("use_cache=True is not supported in this correctness-first patched generation implementation.")
+        _, decoder_layers, _, _ = self._resolve_model_parts()
+        encoded = self._tokenizer(
+            prompt,
+            return_tensors="pt",
+            truncation=True,
+            max_length=int(self.config.max_length),
+        )
+        current_inputs = {key: value.to(self._device) for key, value in encoded.items()}
+
+        prepared: Dict[int, Any] = {}
+        for layer_index, patch_tensor in layer_patch_map.items():
+            tensor = patch_tensor
+            if isinstance(tensor, np.ndarray):
+                tensor = self._torch.from_numpy(tensor)
+            prepared[int(layer_index)] = tensor.to(device=self._device, dtype=self._resolve_dtype())
+
+        handles = []
+        for layer_index, patch_tensor in prepared.items():
+            layer = decoder_layers[int(layer_index)]
+
+            def make_hook(tensor):
+                def _hook(_module, _inputs, output):
+                    if isinstance(output, tuple):
+                        hidden_states = output[0]
+                        patched = hidden_states.clone()
+                        patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                        return (patched, *output[1:])
+                    patched = output.clone()
+                    patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                    return patched
+
+                return _hook
+
+            handles.append(layer.register_forward_hook(make_hook(patch_tensor)))
+
+        generated_token_ids: List[int] = []
+        per_step_top_logits: List[List[Dict[str, Any]]] = []
+        finish_reason = "max_new_tokens"
+        eos_token_id = self._tokenizer.eos_token_id
+        stop_ids = {int(token_id) for token_id in (stop_token_ids or [])}
+        steps_remaining = int(patch_step_count) if patch_step_count is not None else None
+        try:
+            for _step in range(int(max_new_tokens)):
+                outputs = self._forward(
+                    **current_inputs,
+                    use_cache=False,
+                    output_hidden_states=False,
+                    output_attentions=False,
+                )
+                last_logits = outputs.logits[:, -1, :].detach()
+                if float(repetition_penalty) > 1.0:
+                    penalty = float(repetition_penalty)
+                    penalized_ids = set(current_inputs["input_ids"][0].detach().cpu().tolist())
+                    for token_id in penalized_ids:
+                        value = last_logits[0, int(token_id)]
+                        if float(value.item()) < 0.0:
+                            last_logits[0, int(token_id)] = value * penalty
+                        else:
+                            last_logits[0, int(token_id)] = value / penalty
+                logits_for_sampling = last_logits
+                if do_sample:
+                    safe_temperature = max(float(temperature), 1e-5)
+                    logits_for_sampling = logits_for_sampling / safe_temperature
+                    probs = self._torch.softmax(logits_for_sampling, dim=-1)
+                    next_token = self._torch.multinomial(probs, num_samples=1)
+                else:
+                    next_token = self._torch.argmax(logits_for_sampling, dim=-1, keepdim=True)
+                next_token_id = int(next_token[0, 0].item())
+                generated_token_ids.append(next_token_id)
+                per_step_top_logits.append(self._top_token_logits(last_logits[0].detach().float().cpu(), self.config.top_k))
+
+                current_inputs["input_ids"] = self._torch.cat([current_inputs["input_ids"], next_token], dim=1)
+                if "attention_mask" in current_inputs:
+                    next_mask = self._torch.ones_like(next_token, device=self._device)
+                    current_inputs["attention_mask"] = self._torch.cat([current_inputs["attention_mask"], next_mask], dim=1)
+
+                if eos_token_id is not None and next_token_id == int(eos_token_id):
+                    finish_reason = "eos_token"
+                    break
+                if next_token_id in stop_ids:
+                    finish_reason = "stop_token"
+                    break
+                if steps_remaining is not None:
+                    steps_remaining -= 1
+                    if steps_remaining <= 0 and handles:
+                        for handle in handles:
+                            handle.remove()
+                        handles = []
+                elif not patch_generation_steps and handles:
+                    for handle in handles:
+                        handle.remove()
+                    handles = []
+        finally:
+            for handle in handles:
+                handle.remove()
+
+        generated_text = self._tokenizer.decode(generated_token_ids, skip_special_tokens=True).strip()
+        return {
+            "generated_text": generated_text,
+            "generated_token_ids": list(generated_token_ids),
+            "num_new_tokens": len(generated_token_ids),
+            "finish_reason": finish_reason,
+            "patched_layers": sorted(int(layer_index) for layer_index in prepared),
+            "per_step_top_logits": per_step_top_logits,
+        }
+
     def patch_residual_positions(
         self,
         *,

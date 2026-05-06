@@ -27,9 +27,7 @@
 - Llama 只作为 weak replication / limitation，不继续建议 alpha / k / layer sweep。
 - Mistral 只作为 appendix exploratory，不继续建议 sweep。
 - identity/profile 只作为 weak mechanistic observation / boundary。
-- held-out objective-local export 的 CI 可以保守写成 `item-level percentile bootstrap, 2000 iterations`。
-- formal controls aggregate 的 CI 可以保守写成 `shared sample ID item-level percentile bootstrap, 2000 iterations`。
-- frozen `whitebox_effect_size_table.csv` 的 bootstrap 细节在当前审计输入下仍只能写成 `unable to confirm`，不要写成 `fully verified`。
+- 95% CIs are reported as part of the frozen result package; exact bootstrap repetition count and CI variant are not independently confirmed in the current audit.
 
 ## Key Frozen Anchors
 

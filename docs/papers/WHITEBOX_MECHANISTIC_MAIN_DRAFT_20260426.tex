@@ -28,54 +28,43 @@
 \maketitle
 
 \begin{abstract}
-Sycophantic behavior in language models is often evaluated as a single behavioral failure mode: a model changes its answer or stance under user pressure.
-We argue that this behavioral similarity is too coarse for white-box intervention claims.
-Using a frozen evidence package across Qwen, GLM, Llama, and Mistral variants, we present bounded mechanistic evidence that pressure-induced sycophancy does not share one uniform linear intervention profile across belief-style and identity/profile pressure.
-In the Qwen objective-local mainline, Qwen 7B and Qwen 3B provide bounded positive evidence for a late-layer belief-pressure drift that is partially intervenable under fixed \texttt{baseline\_state\_interpolation} settings, reducing stance drift and pressured compliance while preserving recovery in the tested sample.
-This positive result is deliberately bounded: it is defined under an objective-local proxy mapping rather than a bridge-causal leaderboard.
-Available control-side and held-out artifacts strengthen the narrower interpretation that this result is not well explained by arbitrary same-layer perturbation, shuffled pressure pairing, or the original tuning subset alone.
-Qwen 14B provides secondary support, and GLM supports cross-family directionality with a substantial damage tradeoff.
-By contrast, the current identity/profile evidence suggests that this pressure type does not exhibit the same intervention profile under the tested setup, and Llama shows that a pressure-related direction can be locatable at the representation level without yielding reliable behavioral control.
-We therefore position the paper as a mechanism-boundary study: it provides pressure-type-specific intervention evidence for belief-style pressure while clarifying limits on generalization across pressure types and model families.
+Sycophantic behavior in language models---shifting answers under user pressure---is often treated as a single failure mode and implicitly assumed to admit uniform intervention strategies.
+We show that this assumption is misleading: pressure-induced sycophantic behavior does not admit a single, uniformly effective linear intervention.
+
+Across a frozen white-box evidence package spanning Qwen, GLM, Llama, and Mistral families, we identify a structural condition under which a pressure-related direction is behaviorally controllable.
+Controllability arises when a direction both aligns with a behaviorally actionable logit axis and exhibits high logit-level specificity, producing a strong belief-logit shift while leaving unrelated logits largely unaffected.
+
+The Qwen mainline satisfies this condition, yielding a clean objective-local intervention profile with reduced stance drift and pressured compliance, preserved recovery, and no observed baseline damage in the tested sample.
+In contrast, Llama violates this condition: pressure-related directions are detectable in representation space but do not translate into reliable behavioral control.
+GLM provides cross-family directionality with a substantial damage tradeoff, further illustrating that directional alignment alone is insufficient for clean intervention.
+
+We therefore position this work as a mechanism-boundary study rather than a mitigation method.
+The contribution is to identify a structural failure mode of uniform steering assumptions: localization, pressure type, and controllability can come apart, and a pressure-related direction can be clearly visible without being behaviorally actionable.
 \end{abstract}
 
 \section{Introduction}
 
-Language models often change their answers when a user applies pressure.
-In sycophancy evaluations, this behavior is commonly treated as a single phenomenon: a model follows the user's stated preference, identity, or argument even when doing so conflicts with a more stable answer.
-This behavioral framing is useful for measurement, but behavioral similarity alone does not imply the same intervention geometry or the same degree of linear controllability.
+Language models often exhibit pressure-induced sycophantic behavior: they shift their answers under user-provided arguments, identities, or social framing.
+Prior work typically treats such behavior as a single failure mode and implicitly assumes that similar behaviors admit similar intervention strategies.
+This paper challenges that assumption.
+We argue that pressure-induced sycophancy is not a mechanistically uniform phenomenon, and therefore should not be expected to admit a single, uniformly effective linear intervention.
 
-This paper argues that pressure-induced sycophancy is not uniformly linearly steerable.
-More specifically, the present evidence separates belief-style argumentative pressure from identity/profile pressure rather than treating them as one shared intervention target.
-We study pressure-induced sycophancy through a white-box evidence package that separates belief-style pressure from identity/profile pressure.
-Belief-style pressure refers to cases where the user supplies an argument or stance cue that pushes the model toward a pressure-aligned belief.
-Identity/profile pressure refers to cases where the user profile or identity frame changes the social context of the answer.
-Both can look similar behaviorally, but the evidence does not support treating them as one shared linearly controllable pathway.
+Instead of proposing a stronger steering method, we ask a more basic question: when does a pressure-related direction in representation space correspond to a behaviorally controllable axis?
+Using a frozen white-box evidence package across Qwen, GLM, Llama, and Mistral families, we show that localization, pressure type, and controllability can come apart.
+In particular, belief-style pressure in the Qwen mainline exhibits a late-layer drift that is both detectable and partially intervenable under an objective-local protocol.
+However, this pattern does not generalize uniformly: identity/profile pressure does not exhibit the same intervention profile; Llama demonstrates that a pressure-related direction can be clearly locatable without yielding reliable behavioral control; and cross-family transfer (e.g., GLM) introduces substantial damage tradeoffs.
+These findings suggest a structural failure mode for uniform steering assumptions: a direction can be mechanistically visible without being behaviorally actionable.
+We therefore position this work not as a universal mitigation method, but as a mechanism-boundary study that identifies the conditions under which linear intervention succeeds, and more importantly, the conditions under which it fails.
 
 Our main claim is:
 \begin{quote}
 Pressure-induced sycophancy is not uniformly linearly steerable: belief-style pressure is partially intervenable in the Qwen objective-local mainline, with bounded cross-model support, while identity/profile pressure and Llama transfer mark clear limits on treating pressure as a single controllable direction.
 \end{quote}
 
-The positive part of the claim is anchored in the objective-local Qwen mainline.
-Under the default \texttt{baseline\_state\_interpolation} settings, Qwen 7B and Qwen 3B reduce stance drift and pressured compliance while preserving recovery and introducing no observed baseline damage in the tested sample under the objective-local proxy mapping defined in the statistical closure notes.
-Together with the available control-side and held-out artifacts, these results support the narrower interpretation that belief-style pressure can induce a late-layer drift that is not merely detectable but partially intervenable in the tested Qwen setting.
-
-The broader evidence is deliberately bounded.
-Qwen 14B provides secondary causal confirmation, suggesting that the belief-pressure damping direction is not confined to one model size.
-GLM-4-9B gives cross-family directionality support, but with a substantially stronger baseline-damage tradeoff.
-Llama-3.1-8B provides the clearest limitation case: the belief-pressure direction is more identifiable under an English bridge prompt, yet the tested intervention transfers weakly, leaving pressured compliance unchanged, reducing recovery, and introducing substantial baseline damage.
-Mistral-7B remains appendix exploratory rather than formal replication, with high baseline damage and unstable behavior across prompt variants.
-
-The negative part of the claim is equally important.
-The identity/profile line provides weak localization evidence but insufficient causal intervention support, and Llama shows that localization need not imply behavioral usefulness.
-We therefore do not claim identity-specific mitigation, and we do not treat identity/profile pressure as solved by the same linear belief-damping story.
-This distinction is the paper's central contribution: not universal pressure mitigation, but a pressure-type-specific account of when a white-box pressure direction is detectable, partially intervenable, and behaviorally useful.
-
-Our contribution is not a universal mitigation method, but a bounded mechanistic account of when pressure-induced sycophancy admits useful linear intervention.
-We provide objective-local causal evidence that belief-style argumentative pressure in the Qwen mainline is associated with a late-layer drift that is partially intervenable under fixed white-box settings.
-We then use cross-model and cross-pressure comparisons to map the boundary of this result: GLM supports directionality with a substantial damage tradeoff, Llama separates localization from controllability by showing a locatable but behaviorally weak direction, and identity/profile pressure does not exhibit the same linear-steerability profile under the tested setup.
-Taken together, these results support a pressure-type-specific intervention profile in the tested setup, rather than treating all pressure-like behavior as one uniformly linearly steerable pathway.
+The positive part of the claim is anchored in the Qwen mainline: under the default \texttt{baseline\_state\_interpolation} settings, Qwen 7B and Qwen 3B reduce stance drift and pressured compliance while preserving recovery and introducing no observed baseline damage in the tested sample under the objective-local proxy mapping defined in the statistical closure notes.
+Cross-model and cross-pressure comparisons then mark the boundary of that result: Qwen 14B provides secondary causal confirmation, GLM-4-9B provides cross-family directionality with a substantially stronger baseline-damage tradeoff, Llama-3.1-8B shows that a pressure-related direction can be locatable without yielding reliable behavioral control, and identity/profile pressure does not exhibit the same intervention profile under the tested setup.
+The contribution is therefore not a universal mitigation method, but the identification of a structural condition under which localization, pressure type, and controllability can come apart: a pressure direction can be strongly locatable without being behaviorally actionable.
+This paper does not evaluate how strong a particular steering method is. Instead, it asks whether a single linear steering paradigm can be expected to work uniformly across pressure types and model families---and identifies structural reasons why it cannot.
 
 The paper proceeds as follows.
 Section~\ref{sec:related} situates the work relative to behavioral sycophancy measurement and activation-level intervention work, emphasizing pressure-type separation rather than generic steering.
@@ -222,8 +211,8 @@ These objective-local proxy metrics should therefore be read as a distinct metri
 
 \subsection*{Statistical reporting boundary}
 
-The paper reports 95\% bootstrap confidence intervals from the frozen statistical-closure pipeline, using item-level paired resampling.
-For the main lines discussed in the paper, the archived sample counts are $n=100$ for Qwen 7B and Qwen 3B, and $n=24$ for Qwen 14B, GLM-4-9B, Llama-3.1-8B, and Mistral-7B.
+95\% CIs are reported as part of the frozen result package; exact bootstrap repetition count and CI variant are not independently confirmed in the current audit.
+For the main lines discussed in the paper, the archived sample counts are $n=100$ for Qwen 7B, Qwen 3B, Qwen 14B, GLM-4-9B, and Llama-3.1-8B, while Mistral-7B remains an appendix-only $n=24$ exploratory line.
 The current archived outputs do not separately serialize the bootstrap repetition count or the exact confidence-interval variant, so we do not over-specify those implementation details in the main text.
 We therefore present the confidence intervals as part of the frozen result package and avoid stronger claims about inferential procedure than the current audit trail supports.
 
@@ -325,6 +314,9 @@ Within the objective-local Qwen setting, the mainline intervention shows a clean
 Random-direction and shuffled-label controls do not reproduce this clean profile, and the held-out slice preserves the main direction.
 This supports a bounded but nontrivial white-box intervention finding.
 At the same time, the human audit suggests that recovery is harder to adjudicate than stance drift or pressured compliance, so the strong recovery deltas should be treated as a weaker human-readable dimension than the main drift/compliance gains.
+A small wording-family check on the Qwen 7B mainline subset further suggests that the observed belief-pressure drift is not tied to a single pressure intro template, with consistent direction across authority-framed and consensus-framed variants (Appendix~\ref{sec:appendix_robustness}).
+A free-form patched generation diagnostic further confirms that the late-layer intervention effect is visible in open-ended generation, though the behavioral gain saturates at the shortest patch horizons while extended patching degrades text quality (Appendix~\ref{sec:appendix_freeform_patched_diagnostic}).
+These results should be read as establishing a clean case where controllability conditions are satisfied, rather than as demonstrating a generally strong intervention method.
 
 \paragraph{Mechanistic diagnostics.}
 The formal layer-wise mechanistic diagnostics strengthen the interpretation that the mainline is targeting a belief-relevant late-layer direction rather than an arbitrary edit.
@@ -395,15 +387,13 @@ They establish a formal Qwen mainline for belief-style pressure under the specif
 
 Qwen 14B extends the Qwen evidence across scale through a secondary causal-confirmation run, with source details listed in the Appendix Artifact Registry.
 It is used only as secondary causal confirmation rather than as a new main mitigation line.
-Under matched belief-subspace damping against no intervention, Qwen 14B reduces drift by -0.2068 with confidence interval [-0.4167, 0.0000], and reduces pressured compliance by -0.2484 with confidence interval [-0.4167, -0.0833].
-Its recovery delta is 0, and baseline damage is 0.0416.
-This supports the direction of the belief-pressure intervention while keeping the main claim anchored in the 3B/7B formal line.
+Under a larger evaluation (\(n=100\)), Qwen 14B shows drift delta \(-0.06\), compliance delta \(-0.07\), recovery delta \(+0.03\), and baseline damage \(0.01\).
+This is a weaker but more stable profile than the earlier small-sample readout, and it supports the direction of the belief-pressure intervention without qualifying as a new main mitigation line.
 
 GLM-4-9B provides cross-family evidence through a matched subspace-damping transfer run, with source details listed in the Appendix Artifact Registry.
-In the representative transfer setting, it reduces stance drift by -0.2932 with confidence interval [-0.5417, -0.0417], and pressured compliance by -0.2095 with confidence interval [-0.4167, 0.0000].
-It also improves recovery by 0.3769 with confidence interval [0.1667, 0.5833].
-However, this support comes with substantial baseline damage of 0.3325 with confidence interval [0.1667, 0.5417].
-GLM is therefore best read as cross-family directionality with substantial damage tradeoff, not a clean replication.
+Under \(n=100\), GLM-4-9B retains a weak positive profile: drift delta \(-0.01\), compliance delta \(-0.01\), recovery delta \(+0.12\), with residual baseline damage of \(0.06\).
+The damage tradeoff is substantially lower than the earlier small-sample representative row, but the directional gains remain modest.
+GLM is therefore best read as cross-family weak positive with residual damage tradeoff, rather than as a clean cross-family replication.
 
 Table~\ref{tab:cross-support} collects Qwen 14B and GLM.
 It makes the asymmetry visible: the belief-pressure damping direction transfers beyond the primary Qwen 3B/7B settings, but the quality of transfer depends on model family and damage profile.
@@ -423,14 +413,79 @@ It makes the asymmetry visible: the belief-pressure damping direction transfers 
     \toprule
     Model & Stance drift delta & Compliance delta & Recovery delta & Baseline damage & Interpretation \\
     \midrule
-    Qwen 14B & -0.2068 [-0.4167, 0.0000] & -0.2484 [-0.4167, -0.0833] & 0 & 0.0416 & Secondary causal confirmation. \\
-    GLM-4-9B & -0.2932 [-0.5417, -0.0417] & -0.2095 [-0.4167, 0.0000] & 0.3769 [0.1667, 0.5833] & 0.3325 [0.1667, 0.5417] & Cross-family directionality with stronger tradeoff. \\
+    Qwen 14B & -0.06 & -0.07 & +0.03 & 0.01 & Secondary causal confirmation under a larger \(n=100\) evaluation. \\
+    GLM-4-9B & -0.01 & -0.01 & +0.12 & 0.06 & Cross-family weak positive with residual damage tradeoff. \\
     \bottomrule
   \end{tabular}
   }
-  \caption{Cross-scale and cross-family support for belief-pressure damping. Qwen 14B is secondary causal confirmation, while GLM-4-9B supports cross-family directionality with a stronger damage tradeoff.}
+  \caption{Cross-scale and cross-family support for belief-pressure damping. Qwen 14B provides secondary causal confirmation under a larger \(n=100\) evaluation, while GLM-4-9B retains a weak positive profile with residual damage tradeoff.}
   \label{tab:cross-support}
 \end{table}
+
+\section{What Makes a Pressure Direction Controllable?}
+\label{sec:controllability}
+
+The current evidence package reveals an asymmetry that is more informative than a simple ``success versus failure'' split.
+In Qwen, the belief-relevant late-layer direction is both locatable and behaviorally useful under the tested objective-local intervention family.
+In Llama, the corresponding direction is locatable but transfers weakly at the behavioral level.
+This raises a deeper question: what properties make a pressure direction controllable rather than merely visible?
+The cross-model projection-to-logit comparison in Table~\ref{tab:appendix_cross_model_proj_logit} offers a structural clue under the frozen evidence boundary.
+
+One distinguishing factor is logit specificity rather than direction strength alone.
+Qwen 7B shows a large belief-logit delta of \(-5.39\), roughly 6.8$\times$ the magnitude of Llama's \(-0.79\), while its matched negative logit delta is nearly zero at \(-0.005\).
+Taken together, these diagnostics suggest not just a strong direction, but a strong and highly specific one: the intervention moves logits toward the non-pressure answer while barely disturbing unrelated directions.
+Llama's belief-to-negative ratio remains nontrivial, but its absolute belief-logit effect is much smaller, so the ratio alone does not yield equally actionable control.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    Model & Belief-logit $\Delta$ & Negative-ctrl $\Delta$ & Specificity & Proj.--drift $r$ & Baseline/pressured & Behavioral outcome \\
+    \midrule
+    Qwen 7B & $-$5.39 & $-$0.005 & High & $-$0.39 & 1.02 & Controllable (mainline) \\
+    Qwen 3B & $-$5.10 & $-$0.93 & Mod./high & $-$0.52 & 0.51 & Controllable (replication) \\
+    Llama 3.1 8B & $-$0.79 & +0.06 & Lower & $-$0.40 & 0.68 & Locatable only \\
+    GLM-4-9B & --- & --- & --- & --- & --- & Damage tradeoff \\
+    \bottomrule
+  \end{tabular}
+  \caption{Diagnostic signatures of controllable versus merely locatable pressure directions. Logit specificity (strong belief-logit delta with near-zero negative-control delta) separates the Qwen mainline from the Llama limitation case more clearly than projection magnitude or projection--behavior correlation. GLM is retained as a directionality-with-damage case rather than a logit-level mechanism comparison, because no frozen projection-to-logit diagnostic is available.}
+  \label{tab:controllability_diagnostics}
+\end{table}
+
+The pattern in Table~\ref{tab:controllability_diagnostics} suggests that controllability depends on whether the pressure direction aligns with a behaviorally actionable logit axis, rather than merely being detectable in representation space.
+Qwen 7B is the cleanest current case: its belief-logit delta is strong and its negative-control delta is near zero, so the direction is both logit-effective and logit-specific.
+
+These observations point toward a structural condition: a pressure direction is controllable only when it aligns with a behaviorally actionable logit axis and remains sufficiently specific---that is, its intervention effects are concentrated on belief-relevant outputs rather than broadly perturbing the logit landscape.
+Under this view, controllability is not guaranteed by localization.
+Instead, it depends on whether the identified direction corresponds to a computation that the model can selectively modulate without introducing substantial off-target interference.
+We state the following proposition under the current evidence boundary: a pressure direction becomes behaviorally controllable under linear intervention only when it produces a sufficiently large belief-logit shift while keeping negative-control logit movement near zero.
+
+This perspective organizes the cross-model evidence into a single framework:
+\begin{itemize}
+  \item Qwen (7B and 3B) satisfies both alignment and specificity, yielding the strongest intervention results in the evidence package;
+  \item Llama satisfies localization but not actionable alignment---its belief-logit delta is roughly 6.8$\times$ weaker than Qwen 7B's, and its behavioral closure remains weak with substantial baseline damage;
+  \item GLM exhibits directional alignment with a stronger damage tradeoff, so its cross-family signal is informative while the mechanism interpretation remains less complete under the tested protocol.
+\end{itemize}
+
+Projection strength by itself does not predict controllability.
+Across Qwen 7B, Qwen 3B, and Llama, the correlation between pressured projection magnitude and stance drift is always negative: \(-0.39\), \(-0.52\), and \(-0.40\), respectively.
+Qwen 7B also has a much larger pressured projection norm than Llama (69.8 versus 9.2), yet the projection-behavior decoupling is similar.
+This makes a purely scalar reading difficult to defend: larger projection does not monotonically imply stronger pressure susceptibility or stronger intervention success.
+Under the current evidence package, logit-level specificity appears more behaviorally informative than projection magnitude alone.
+
+Qwen 7B also differs in how the identified direction relates to baseline computation.
+Its baseline/pressured projection ratio is 1.02, indicating that the direction is already structurally active rather than being newly created by pressure.
+Qwen 3B and Llama show lower ratios of 0.51 and 0.68, respectively, which is more consistent with pressure increasing loading on the same direction.
+The most conservative interpretation is that Qwen 7B contains a belief-relevant computational axis that pressure exploits rather than constructs.
+This remains a model-specific mechanistic hypothesis under the tested setup, not a universal law.
+
+The resulting picture goes beyond saying that ``Qwen works'' while ``Llama fails.''
+Under the frozen evidence boundary, controllability appears strongest when a pressure-related direction combines a sizable belief-logit effect with high specificity and limited off-target interference.
+Qwen 7B fits that profile most clearly; Qwen 3B shows a related but not identical pattern; and Llama satisfies localization but not useful control.
+GLM-4-9B is included as a directionality-with-damage case rather than a logit-level mechanism comparison, due to the absence of a frozen projection-to-logit diagnostic. Its cross-family directionality is informative, but the lack of logit-specific evidence limits the depth of the mechanism comparison for this model.
+This section should be read as a bounded mechanism hypothesis rather than a universal controllability law.
+Its role is to explain why similar pressure-induced sycophantic behaviors do not admit uniform linear intervention, even when their representation-level signatures appear partially comparable.
 
 \section{Limitation Result: Llama Is Locatable But Not Controllable}
 \label{sec:llama}
@@ -438,12 +493,13 @@ It makes the asymmetry visible: the belief-pressure damping direction transfers 
 Llama-3.1-8B is the paper's most important limitation case, supported by an archived limitation diagnostic and summarized in Figure~\ref{fig:llama-limitation}; source details are listed in the Appendix Artifact Registry.
 The projection-to-logit summary indicates that the pressured-stage belief projection is stronger than baseline, so a belief-pressure direction is locatable under the English bridge prompt.
 However, this localization does not translate into reliable behavioral control.
-Projection magnitude is weakly and negatively correlated with stance drift, and the tested belief damping moves logits in the targeted direction while remaining entangled with the baseline manifold.
+Projection magnitude is weakly and negatively correlated with stance drift, and the tested belief damping moves logits in the targeted direction while still introducing substantial off-target interference.
 
 The behavioral closure makes the limitation concrete.
 In the representative weak-replication setting, Llama reduces stance drift only by -0.0824 with confidence interval [-0.2917, 0.1250], leaves pressured compliance unchanged, reduces recovery by -0.0847 with confidence interval [-0.2917, 0.1250], and incurs baseline damage of 0.2499 with confidence interval [0.0833, 0.4167].
 This is not a positive replication of the Qwen/GLM pattern.
 
+The cross-model projection-to-logit comparison in Section~\ref{sec:controllability} shows that this limitation is not simply an absence of success: Llama's belief logit delta is roughly 6.8$\times$ weaker than Qwen 7B's, and its projection-behavior correlation is similarly decoupled, so ``locatable'' does not imply ``actionable.''
 The Llama result separates two concepts that are often conflated: locating a pressure-related direction and controlling pressure-induced behavior.
 Llama shows that the former is insufficient for the latter.
 The limitation panel is therefore framed as ``locatable but not controllable,'' with Llama treated as weak replication / limitation.
@@ -484,12 +540,12 @@ First, the positive Qwen mainline is defined under an objective-local proxy mapp
 These results are the formal mainline for the present evidence package, but they should not be merged into a single ranking with bridge causal transfer lines.
 Their large recovery deltas are also partly tied to the structural-zero recovery reference in the underlying proxy setup.
 
-Second, the transfer lines remain small-sample and tradeoff-sensitive.
-Qwen 14B provides secondary causal confirmation, but the evidence is not positioned as a new primary mitigation line.
-Qwen 14B, Llama-3.1-8B, and Mistral-7B rely on $n=24$ bridge-style transfer evaluations, whereas the Qwen 3B and Qwen 7B closure results are $n=100$ and arise from an original mainline subset of $n=108$ before controls are removed for closure.
-For Qwen 14B specifically, recovery delta is 0 and baseline damage is nonzero.
-GLM-4-9B reproduces the intervention direction across model families, but the most directly comparable representative rows remain small-sample and tradeoff-sensitive, with substantially stronger baseline damage.
-The larger GLM experiment family therefore should not be conflated with the narrower set of frozen closure rows most comparable to the Qwen transfer lines.
+Second, the cross-model transfer evaluations have been expanded to \(n=100\) for Qwen 14B, GLM-4-9B, and Llama-3.1-8B, providing more stable boundary evidence.
+Qwen 14B now provides secondary positive confirmation, but the evidence is not positioned as a new primary mitigation line.
+GLM-4-9B retains a weak positive profile with residual damage tradeoff, rather than a clean cross-family success.
+Llama-3.1-8B remains a limitation case in which the identified direction does not yield reliable behavioral control.
+These larger cross-model evaluations should still be read as transfer-style boundary evidence rather than as replacements for the Qwen 3B/7B objective-local mainline, whose closure results are \(n=100\) and arise from an original mainline subset of \(n=108\) before controls are removed for closure.
+No frozen projection-to-logit summary is currently archived for GLM, so the cross-model mechanism-gap discussion does not make a logit-level comparability claim for that model family.
 GLM and Mistral should therefore be read as damage-tradeoff cases, not as no-cost deployment evidence.
 
 Third, the updated controls improve the robustness story but do not eliminate all control-side limitations.
@@ -498,6 +554,7 @@ Even so, the paper still does not provide an exhaustive formal control suite acr
 
 Fourth, Llama-3.1-8B remains a limitation rather than a positive replication.
 Its belief-pressure subspace is more identifiable under the English bridge prompt, but the tested intervention only slightly reduces drift, leaves pressured compliance unchanged, lowers recovery, and introduces substantial baseline damage.
+A larger evaluation (\(n=100\)) further confirms this limitation: the intervention slightly worsens drift (\(+0.03\)), leaves compliance unchanged, reduces recovery (\(-0.03\)), and still incurs baseline damage (\(0.08\)).
 This shows that localization alone does not establish controllability.
 
 Fifth, the identity/profile line remains unresolved.
@@ -511,8 +568,11 @@ The expert adjudication strengthens that interpretation rather than overturning 
 The white-box evidence therefore localizes behavior to intervention sites and subspaces rather than to a completed circuit-level account, and the human side remains appendix-level support rather than a main evidential pillar.
 
 Seventh, the mainline uses single-pass option-logit scoring rather than fully testing free-form generation behavior.
-This restriction is deliberate and methodologically useful, but it means the present paper is strongest as a bounded mechanism paper rather than as a complete account of generation-time pressure mitigation.
-A small human audit or free-form generation sanity check would be the next natural step for connecting the objective-local proxy effects more directly to open-ended conversational behavior.
+We address this gap with a small free-form diagnostic confirm experiment on the Qwen 7B mainline (\(n=50\), five patch conditions), reported in the Appendix.
+The results show that the late-layer intervention effect is visible in open-ended generation under pressured and recovery prompts: both \metric{prefill\_only} and \metric{first\_token\_only} patching reduce \metric{drift\_rate} from 0.36 to 0.10 and \metric{wrong\_follow\_rate} from 0.42 to 0.16.
+However, the effect is already saturated at the shortest patch horizons tested.
+Extending the patch deeper into generation (\metric{first\_3\_tokens}, \metric{continuous}) does not improve the measured behavioral outcomes and instead sharply degrades text quality: \metric{readable\_rate} drops from 0.94 to 0.00 and \metric{repetition\_rate} rises from 0.00 to 1.00.
+We therefore treat these results as diagnostic free-form boundary evidence rather than as clean free-form intervention success, and identify \emph{intervention-continuity tradeoff} as a structural constraint on linear activation steering in open-ended generation.
 
 Taken together, these limitations are part of the paper's core argument.
 The evidence supports a pressure-type-specific mechanism map, not a universal pressure mitigation method.
@@ -522,13 +582,20 @@ The evidence does not support universal transfer, positive Llama replication, or
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper suggests that pressure-induced sycophancy is mechanistically non-uniform under the tested setup.
+This paper establishes that pressure-induced sycophantic behavior is not a mechanistically uniform phenomenon under the tested setup.
 Belief-style pressure admits a partially intervenable late-layer drift in the Qwen objective-local mainline, with bounded cross-scale and cross-family support.
-Identity/profile pressure, however, does not follow the same intervention pattern, and Llama shows that a locatable pressure direction need not be a controllable one.
+However, this pattern does not generalize uniformly: identity/profile pressure does not exhibit the same linear-steerability profile, and Llama demonstrates that a pressure-related direction can be locatable without yielding reliable behavioral control.
 
-The resulting picture is not universal pressure mitigation, but a more precise mechanistic map.
-Our results instead suggest that different pressure types should not be assumed to share the same linear intervention profile.
-Belief-style pressure can be partially controlled in the tested Qwen settings, while identity/profile pressure remains less linearly steerable, and Llama marks the boundary between identifying a pressure-related direction and reliably using it for behavioral intervention.
+The central implication is structural rather than empirical.
+Pressure-induced sycophantic behavior should not be modeled as a single linearly steerable phenomenon, even when it appears behaviorally similar across prompts, pressure types, or model families.
+The failure of uniform controllability is not incidental, but arises from misalignment between representation-level signals and behaviorally actionable logit axes.
+
+Under the current evidence package, controllability emerges only when a pressure-related direction satisfies two conditions simultaneously: it must produce a sufficiently strong belief-logit shift, and it must remain logit-specific, avoiding substantial off-target interference.
+Qwen provides a clean case where both conditions hold; Llama provides a counterexample where localization does not translate into control; and GLM illustrates that directional alignment alone can come with substantial damage tradeoffs.
+
+Taken together, these results support a mechanism-boundary view of pressure-induced sycophancy.
+Rather than asking how to uniformly steer such behavior, a more appropriate question is when and why linear intervention is expected to succeed at all.
+This paper provides an initial answer: linear steerability is conditional, model-dependent, and pressure-type-specific, even within a controlled white-box setting.
 
 \appendix
 
@@ -595,6 +662,7 @@ That subset contains 108 items: 50 \texttt{strict\_positive}, 50 \texttt{high\_p
 As emphasized in the main text, these objective-local evaluations use frozen single-pass option-logit scoring and should not be merged into a single leaderboard with bridge causal metrics from Qwen 14B, GLM, Llama, or appendix-only Mistral.
 
 \section{Robustness and Method-Boundary Materials}
+\label{sec:appendix_robustness}
 
 The available robustness record is not a universal controls suite, but it is sufficient to document method boundaries around the default mainline settings.
 Table~\ref{tab:appendix_qwen_robustness_full} provides the full archived Qwen robustness details corresponding to the compact main-text summary in Table~\ref{tab:qwen-robustness}.
@@ -649,6 +717,31 @@ First, these materials justify writing a bounded robustness appendix, but they d
 Second, the Qwen-7B random/shuffled negative controls remain appendix-only boundary evidence rather than part of the main evidential core.
 They help rule out trivial alternatives, but they do not replace the default mainline settings.
 
+\paragraph{Prompt-family generalization.}
+A small prompt-family check on the Qwen 7B mainline subset (\(n=60\)) tests whether the observed drift direction is tied to a single intro wording.
+Three belief-argument pressure variants were constructed: the default wording, an authority/teacher-framed variant, and a majority/consensus-framed variant.
+All three preserve the same prompt structure (prefix plus question) and the same pressure type (\texttt{belief\_argument}).
+Table~\ref{tab:appendix_prompt_family} reports the baseline accuracy, pressured accuracy, drift rate, and wrong-option-follow rate for each variant.
+The drift and wrong-follow directions are consistent across all three wordings.
+Variant B (authority frame) produces a stronger measured drift than the default wording on this 60-item subset.
+This check should be read as a small wording-family robustness note, not as a claim of full prompt-family invariance or independence from all possible social-pressure phrasings.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Variant & Baseline accuracy & Pressured accuracy & Drift rate & Wrong-option-follow rate \\
+    \midrule
+    Default & 0.783 & 0.633 & 0.283 & 0.283 \\
+    Authority (Variant B) & 0.783 & 0.467 & 0.450 & 0.467 \\
+    Majority (Variant C) & 0.783 & 0.600 & 0.317 & 0.317 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Prompt-family generalization on the Qwen 7B mainline subset. All three belief-argument pressure wordings produce drift and wrong-option-follow in the same direction. Variant B (authority/teacher frame) yields a stronger measured effect on this subset. This is a small wording-family robustness check, not a claim of full prompt invariance.}
+  \label{tab:appendix_prompt_family}
+\end{table}
+
 \section{Qwen Layer-wise Mechanistic Diagnostics}
 
 The archived Qwen mechanistic diagnostics provide layer-wise support for the late-layer windows used in the mainline.
@@ -672,6 +765,23 @@ Their role is not to prove a complete causal circuit, but to show that the chose
 The main caution is scalar over-interpretation.
 Across Qwen 7B and Qwen 3B, projection magnitude is not a monotonic index of pressure susceptibility: Qwen 7B does not require larger pressured projection than baseline to support a useful intervention, and both models show negative rather than positive correlation between projection magnitude and stance drift.
 Accordingly, the mechanistic diagnostics support late-layer localization, logit-level specificity, and data-supported layer choice, but not a one-number susceptibility law.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{1.3in}p{0.45in}p{0.9in}p{0.9in}p{0.8in}p{0.9in}p{0.9in}}
+    \toprule
+    Model & $n$ & Belief logit delta & Negative logit delta & Ratio & Baseline / Pressured ratio & Proj.\ vs drift corr. \\
+    \midrule
+    Qwen-7B & 48 & -5.39 & -0.005 & 1083.5 & 1.02 & -0.39 \\
+    Qwen-3B & 48 & -5.10 & -0.93 & 5.48 & 0.51 & -0.52 \\
+    Llama-3.1-8B & 24 & -0.79 & 0.065 & 12.21 & 0.68 & -0.40 \\
+    GLM-4-9B & -- & \multicolumn{5}{p{4.2in}}{No frozen projection summary available; the paper therefore does not make a logit-level comparability claim for GLM.} \\
+    \bottomrule
+  \end{tabular}
+  \caption{Cross-model projection-to-logit comparison from the frozen Qwen and Llama diagnostics. Qwen 7B's near-zero negative logit delta indicates unusually high specificity at the logit level. Projection-versus-drift correlation is negative in all models with archived summaries. GLM is left blank because no frozen projection summary is available in the current evidence package.}
+  \label{tab:appendix_cross_model_proj_logit}
+\end{table}
 
 \section{Human Sanity Check}
 
@@ -722,6 +832,85 @@ For identity/profile follow-up recovery disagreements, the expert consistently s
 For free-form bridge rows, most cases remain unresolved rather than cleanly supporting either side.
 Taken together, these results reinforce the most conservative reading: the human audit remains a sanity-check layer, and recovery is currently its weakest field rather than a human-confirmed success metric.
 The expert adjudication therefore strengthens the boundary interpretation rather than overturning it: it does not validate recovery as a strong human-confirmed success metric, but instead shows that recovery remains difficult and should be treated as the weakest proxy dimension.
+
+\section{Free-Form Generation Corroboration Note}
+\label{sec:appendix_freeform_corroboration}
+
+The evidence package also includes a small free-form sanity note for Qwen 7B.
+Its role is deliberately narrow: to test whether the option-logit proxy is pointing at a readable behavioral shift in open-ended text, not to establish a patched-generation intervention result.
+Under this appendix-only check, the direction of the drift and wrong-option-follow effects matches the objective-local mainline, and the observed magnitudes are not smaller than the corresponding option-logit proxy effects.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{p{1.85in}p{1.35in}p{1.35in}p{1.0in}}
+    \toprule
+    Metric & Option-logit mainline & Free-form sanity & Direction match \\
+    \midrule
+    Baseline accuracy & -- & 0.733 & -- \\
+    Pressured accuracy & -- & 0.550 & -- \\
+    Drift effect & Accuracy decreases under pressure & Accuracy drop = 0.183 & Yes \\
+    Wrong-option-follow & \(\sim 0.26\) & 0.267 & Yes / close \\
+    Strict\_positive wrong-follow & -- & 0.333 & -- \\
+    High\_pressure wrong-follow & -- & 0.200 & -- \\
+    \bottomrule
+  \end{tabular}
+  \caption{Appendix-only free-form generation corroboration note for the Qwen 7B mainline (\(n=60\), no intervention). The free-form baseline/pressured contrast shows the same qualitative drift and wrong-option-follow direction as the objective-local option-logit mainline, but this note remains weak corroboration only: it does not include activation-patched generation and should not be read as deployment-level free-form validation.}
+  \label{tab:appendix_freeform_corroboration}
+\end{table}
+
+This free-form note remains intentionally bounded.
+It is a no-intervention comparison on a small Qwen 7B sanity sample, not a second benchmark family and not an activation-patched generation result.
+Its value is therefore corroborative rather than dispositive: it suggests that the mainline proxy is not detached from readable behavior, while leaving patched free-form intervention as an open question.
+
+\section{Free-Form Patched Generation Diagnostic}
+\label{sec:appendix_freeform_patched_diagnostic}
+
+The free-form patched generation diagnostic extends the no-intervention corroboration (Section~\ref{sec:appendix_freeform_corroboration}) by testing whether activation patching changes extracted answers in open-ended generation, and at what cost to text quality.
+
+\paragraph{Setup.}
+We use \(n=50\) Qwen 7B mainline items (30 \metric{strict\_positive} + 20 \metric{high\_pressure\_wrong\_option}), with \metric{max\_new\_tokens}=50, \metric{temperature}=0, and five patch conditions: \metric{no\_intervention}, \metric{prefill\_only}, \metric{first\_token\_only}, \metric{first\_3\_tokens}, and \metric{continuous} (\(\beta=0.6\), layers 24--26).
+Each item is tested under both \metric{pressured} and \metric{recovery} prompts.
+
+\paragraph{Behavioral results.}
+All four patched conditions show the same behavioral improvement relative to \metric{no\_intervention}: \metric{drift\_rate} drops from 0.36 to 0.10 and \metric{wrong\_follow\_rate} drops from 0.42 to 0.16 under \metric{pressured}; under \metric{recovery}, \metric{drift\_rate} drops from 0.36 to 0.10 and \metric{wrong\_follow\_rate} drops from 0.38 to 0.14.
+The effect is already saturated at \metric{prefill\_only}: increasing patch continuity does not improve the measured behavioral outcomes further.
+
+\paragraph{Quality results.}
+Text quality degrades sharply with patch continuity.
+Under \metric{pressured}, \metric{repetition\_rate} rises from 0.00 (\metric{no\_intervention}) to 0.58 (\metric{first\_3\_tokens}) to 1.00 (\metric{continuous}), and \metric{readable\_rate} drops from 0.96 to 0.42 to 0.00.
+Under \metric{recovery}, the pattern is similar: \metric{repetition\_rate} rises from 0.00 to 0.76 to 1.00, and \metric{readable\_rate} drops from 0.96 to 0.24 to 0.00.
+\metric{distinct-1} (unique unigram ratio) collapses from approximately 0.55--0.62 to 0.0016 under \metric{continuous}.
+
+\paragraph{Boundary interpretation.}
+The diagnostic confirms that the late-layer intervention effect is visible in open-ended generation, but reveals an \emph{intervention-continuity tradeoff}: the behavioral gain is front-loaded at the shortest patch horizons, while additional continuity primarily degrades generation quality without improving measured behavioral outcomes.
+We therefore do not claim that patched free-form generation cleanly succeeds; instead, we identify this tradeoff as a structural constraint on linear activation steering in open-ended decoding.
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{lcccccc}
+    \toprule
+    Condition & Accuracy & Drift rate & Wrong-follow & Repetition rate & Readable rate & Distinct-1 \\
+    \midrule
+    \multicolumn{7}{l}{\textbf{Pressured}} \\
+    No intervention & 0.50 & 0.36 & 0.42 & 0.00 & 0.96 & 0.54 \\
+    Prefill only & 0.78 & 0.10 & 0.16 & 0.00 & 0.94 & 0.55 \\
+    First token only & 0.78 & 0.10 & 0.16 & 0.00 & 0.94 & 0.55 \\
+    First 3 tokens & 0.78 & 0.10 & 0.16 & 0.58 & 0.42 & 0.43 \\
+    Continuous & 0.78 & 0.10 & 0.16 & 1.00 & 0.00 & 0.00 \\
+    \midrule
+    \multicolumn{7}{l}{\textbf{Recovery}} \\
+    No intervention & 0.58 & 0.36 & 0.38 & 0.00 & 0.96 & 0.62 \\
+    Prefill only & 0.78 & 0.10 & 0.14 & 0.00 & 0.96 & 0.61 \\
+    First token only & 0.78 & 0.10 & 0.14 & 0.00 & 0.96 & 0.61 \\
+    First 3 tokens & 0.78 & 0.10 & 0.14 & 0.76 & 0.24 & 0.41 \\
+    Continuous & 0.78 & 0.10 & 0.14 & 1.00 & 0.00 & 0.00 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Free-form patched generation diagnostic on the Qwen 7B mainline (\(n=50\)). Behavioral improvement (drift and wrong-follow reduction) is already saturated at \metric{prefill\_only}; extending patch continuity degrades text quality without further behavioral gain.}
+  \label{tab:appendix_freeform_patched_diagnostic}
+\end{table}
 
 \section{Llama Projection and Transfer Diagnostics}
 
@@ -810,8 +999,8 @@ These materials are retained only as appendix-level boundary evidence and should
 \end{table}
 
 The most stable reading of these clean-protocol materials is asymmetric.
-Qwen 3B clean provides appendix-level positive confirmation under the clean protocol, but only as a secondary support line.
-Qwen 7B clean is weaker and more mixed, so it is best treated as specific but behaviorally weak boundary evidence rather than as a stable positive result.
+Qwen 3B clean provides appendix-level secondary positive support under the clean protocol, but only as a less-oracle support line rather than as a replacement for the Qwen \texttt{baseline\_state\_interpolation} mainline.
+Qwen 7B clean is best treated as weak / boundary evidence rather than as a stable positive result.
 The expanded Qwen 14B \(n=48\) clean run is cautionary: it does not justify writing that the clean protocol strengthens the 14B line, and it should instead be used to mark a boundary on generalization.
 
 \section{Artifact Registry}
@@ -836,6 +1025,7 @@ The expanded Qwen 14B \(n=48\) clean run is cautionary: it does not justify writ
     \artifact{Qwen-3B-formal-controls} & Qwen 3B formal random-direction and shuffled-label controls & Appendix robustness & Table~\ref{tab:qwen-robustness} \\
     \artifact{Qwen-7B-heldout-validation} & Qwen 7B held-out objective-local evaluation under the archived mainline setting & Main-text robustness-side support & Table~\ref{tab:qwen-robustness} \\
     \artifact{Qwen-layerwise-mechanistic-diagnostics} & Formal Qwen 7B / 3B layer-wise subspace and belief-logit diagnostics for the late-layer mainline windows & Appendix mechanistic note & Table~\ref{tab:appendix_qwen_mech_diag} \\
+    \artifact{Qwen-projection-logit-diagnostics} & Qwen 7B / 3B frozen projection-to-logit diagnostic summaries & Appendix mechanistic note & Table~\ref{tab:appendix_cross_model_proj_logit} \\
     \artifact{Qwen-clean-protocol-note} & Appendix-only clean-protocol note covering Qwen 3B positive confirmation, Qwen 7B weak/mixed evidence, and Qwen 14B \(n=48\) cautionary evidence & Appendix boundary note & Table~\ref{tab:appendix_qwen_clean_protocol} \\
     \bottomrule
   \end{tabular}
@@ -861,6 +1051,7 @@ The expanded Qwen 14B \(n=48\) clean run is cautionary: it does not justify writ
   \item \artifact{Qwen-7B-random-shuffled-negative-controls}: appendix-only robustness suite for non-arbitrary edit boundary checks.
   \item \artifact{Qwen-3B-formal-controls}: Qwen 3B random-direction and shuffled-label controls retained as supplementary robustness context.
   \item \artifact{Qwen-7B-heldout-validation}: held-out objective-local evaluation retained as robustness-side support rather than a separate benchmark family.
+  \item \artifact{Qwen-projection-logit-diagnostics}: frozen Qwen 7B / 3B projection-to-logit summaries used for the cross-model mechanism-gap note.
 \end{itemize}
 
 \begin{thebibliography}{99}
