@@ -52,7 +52,15 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--beta", type=float, default=INTERPOLATION_SCALE)
     parser.add_argument(
         "--patch-mode",
-        choices=["continuous", "prefill_only", "first_token_only", "first_3_tokens", "no_intervention"],
+        choices=[
+            "continuous",
+            "prefill_only",
+            "first_token_only",
+            "first_3_tokens",
+            "first_5_tokens",
+            "first_10_tokens",
+            "no_intervention",
+        ],
         default="continuous",
     )
     parser.add_argument("--repetition-penalty", type=float, default=1.0)
@@ -408,6 +416,10 @@ def _patch_config_from_mode(mode: str) -> tuple[bool, int | None]:
         return True, 1
     if normalized == "first_3_tokens":
         return True, 3
+    if normalized == "first_5_tokens":
+        return True, 5
+    if normalized == "first_10_tokens":
+        return True, 10
     if normalized == "no_intervention":
         return False, 0
     raise ValueError(f"Unsupported patch mode: {mode}")

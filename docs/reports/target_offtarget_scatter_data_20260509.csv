@@ -1,0 +1,301 @@
+item_id,model,target_logit_improvement,off_target_instability_score,is_damage,damage_subtype,baseline_margin_change
+nlp_survey_07025,Qwen 7B,-1.259556,0,false,none,-6.714354
+nlp_survey_02064,Qwen 7B,-1.247519,2,false,none,-6.011755
+nlp_survey_06271,Qwen 7B,2.92984,2,false,none,7.38748
+nlp_survey_04397,Qwen 7B,-1.906693,0,false,none,-6.103703
+nlp_survey_00144,Qwen 7B,2.875389,0,false,none,2.487583
+nlp_survey_06880,Qwen 7B,0.626722,0,false,none,6.714354
+nlp_survey_07055,Qwen 7B,-1.119186,0,false,none,-6.714354
+nlp_survey_02970,Qwen 7B,0.296097,0,false,none,5.311106
+nlp_survey_08513,Qwen 7B,-2.005957,0,false,none,-6.651859
+nlp_survey_08032,Qwen 7B,4.358641,0,false,none,6.709005
+nlp_survey_09982,Qwen 7B,5.087883,0,false,none,2.284382
+nlp_survey_04269,Qwen 7B,-1.114449,0,false,none,-0.797388
+nlp_survey_01766,Qwen 7B,4.441277,0,false,none,0.511213
+nlp_survey_06210,Qwen 7B,-1.319021,2,false,none,-7.413414
+nlp_survey_01694,Qwen 7B,-1.504068,0,false,none,-0.511213
+nlp_survey_07046,Qwen 7B,-1.332775,0,false,none,-6.714354
+nlp_survey_09696,Qwen 7B,-2.223167,0,false,none,-2.284382
+nlp_survey_02036,Qwen 7B,-1.501055,2,false,none,-6.011755
+nlp_survey_03169,Qwen 7B,-1.941868,0,false,none,-6.846209
+nlp_survey_03787,Qwen 7B,-1.904188,0,false,none,-4.958628
+nlp_survey_05321,Qwen 7B,3.851097,0,false,none,4.605366
+nlp_survey_02638,Qwen 7B,-1.804285,0,false,none,-6.015654
+nlp_survey_01200,Qwen 7B,-1.614065,0,false,none,-6.637995
+nlp_survey_05665,Qwen 7B,2.466013,1,true,damage,0.844685
+nlp_survey_04002,Qwen 7B,4.958897,0,false,none,4.958628
+nlp_survey_02163,Qwen 7B,-1.430662,2,false,none,-6.011755
+nlp_survey_02514,Qwen 7B,-2.072428,0,false,none,-6.015654
+nlp_survey_08214,Qwen 7B,-2.124495,0,false,none,-4.405125
+nlp_survey_07632,Qwen 7B,-1.982353,0,false,none,-5.834568
+nlp_survey_09791,Qwen 7B,-2.003531,0,false,none,-2.284382
+nlp_survey_08337,Qwen 7B,4.339439,0,false,none,4.405125
+nlp_survey_09833,Qwen 7B,4.536585,0,false,none,2.284382
+nlp_survey_09885,Qwen 7B,4.144728,0,false,none,2.284382
+nlp_survey_06613,Qwen 7B,4.189363,0,false,none,7.03142
+nlp_survey_01404,Qwen 7B,4.654306,2,false,none,7.111256
+nlp_survey_04941,Qwen 7B,3.871141,0,false,none,6.443062
+nlp_survey_03824,Qwen 7B,-1.941021,0,false,none,-4.958628
+nlp_survey_01911,Qwen 7B,3.824354,2,false,none,6.011755
+nlp_survey_05708,Qwen 7B,4.553589,1,true,damage,0.844685
+nlp_survey_05724,Qwen 7B,4.595837,1,true,damage,0.844685
+nlp_survey_01502,Qwen 7B,-1.403151,2,false,none,-7.111256
+nlp_survey_00789,Qwen 7B,-1.712587,0,false,none,-7.143682
+nlp_survey_02850,Qwen 7B,-1.844147,0,false,none,-5.311106
+nlp_survey_06603,Qwen 7B,3.725277,0,false,none,7.03142
+nlp_survey_03758,Qwen 7B,-2.065714,0,false,none,-4.958628
+nlp_survey_01383,Qwen 7B,3.316353,2,false,none,7.111256
+nlp_survey_03051,Qwen 7B,3.26441,0,false,none,5.311106
+nlp_survey_04497,Qwen 7B,-1.944859,0,false,none,-6.103703
+nlp_survey_07489,Qwen 7B,-1.983204,0,false,none,-5.834568
+nlp_survey_08074,Qwen 7B,4.841633,0,false,none,6.709005
+nlp_survey_05734,Qwen 7B,4.299181,1,true,damage,0.844685
+nlp_survey_07674,Qwen 7B,5.154135,0,false,none,5.834568
+nlp_survey_08448,Qwen 7B,-1.739332,0,false,none,-6.651859
+nlp_survey_06939,Qwen 7B,3.516426,0,false,none,6.714354
+nlp_survey_03804,Qwen 7B,-2.04175,0,false,none,-4.958628
+nlp_survey_06000,Qwen 7B,2.548761,2,false,none,7.413414
+nlp_survey_08092,Qwen 7B,3.761196,0,false,none,6.709005
+nlp_survey_03786,Qwen 7B,-1.72134,0,false,none,-4.958628
+nlp_survey_04084,Qwen 7B,4.167929,0,false,none,0.797388
+nlp_survey_06281,Qwen 7B,4.020678,2,false,none,7.38748
+nlp_survey_07268,Qwen 7B,-1.785973,0,false,none,-6.14727
+nlp_survey_05194,Qwen 7B,-1.312563,2,false,none,-6.933598
+nlp_survey_04533,Qwen 7B,4.65033,0,false,none,6.103703
+nlp_survey_09306,Qwen 7B,-1.217449,2,false,none,-3.887289
+nlp_survey_04217,Qwen 7B,-1.143408,0,false,none,-0.797388
+nlp_survey_02496,Qwen 7B,4.337263,0,false,none,5.442024
+nlp_survey_07832,Qwen 7B,-1.87261,0,false,none,-6.709005
+nlp_survey_04577,Qwen 7B,4.616919,0,false,none,6.103703
+nlp_survey_05184,Qwen 7B,-1.239006,2,false,none,-6.933598
+nlp_survey_05565,Qwen 7B,-1.11002,0,false,none,-4.605366
+nlp_survey_01896,Qwen 7B,3.714827,2,false,none,6.011755
+nlp_survey_05589,Qwen 7B,-1.123602,0,false,none,-4.605366
+nlp_survey_05331,Qwen 7B,4.083229,0,false,none,4.605366
+nlp_survey_08907,Qwen 7B,-1.094374,2,false,none,-6.638142
+nlp_survey_08348,Qwen 7B,4.820314,0,false,none,4.405125
+nlp_survey_06551,Qwen 7B,-1.220596,2,false,none,-7.38748
+nlp_survey_00964,Qwen 7B,4.144093,0,false,none,6.637995
+nlp_survey_00811,Qwen 7B,-1.513836,0,false,none,-7.143682
+nlp_survey_04915,Qwen 7B,5.665701,0,false,none,6.443062
+nlp_survey_01787,Qwen 7B,3.720675,0,false,none,0.511213
+nlp_survey_02398,Qwen 7B,5.240353,0,false,none,5.442024
+nlp_survey_00729,Qwen 7B,4.772827,0,false,none,7.143682
+nlp_survey_09341,Qwen 7B,-1.076569,2,false,none,-3.887289
+nlp_survey_09741,Qwen 7B,-2.030262,0,false,none,-2.284382
+nlp_survey_02250,Qwen 7B,-2.053137,0,false,none,-5.442024
+nlp_survey_05022,Qwen 7B,-1.305639,2,false,none,6.933598
+nlp_survey_01216,Qwen 7B,-1.43088,0,false,none,-6.637995
+nlp_survey_00300,Qwen 7B,-1.204128,0,false,none,-2.487583
+nlp_survey_00456,Qwen 7B,4.740341,0,false,none,2.319338
+nlp_survey_01672,Qwen 7B,-1.943314,0,false,none,-0.511213
+nlp_survey_01394,Qwen 7B,3.126356,2,false,none,7.111256
+nlp_survey_02361,Qwen 7B,4.964161,0,false,none,5.442024
+nlp_survey_08859,Qwen 7B,4.108757,2,false,none,6.638142
+nlp_survey_06500,Qwen 7B,-1.242352,2,false,none,-7.38748
+nlp_survey_07115,Qwen 7B,-1.293112,0,false,none,-6.714354
+nlp_survey_07031,Qwen 7B,-1.252577,0,false,none,-6.714354
+nlp_survey_06379,Qwen 7B,3.958334,2,false,none,7.38748
+nlp_survey_00218,Qwen 7B,-1.265144,0,false,none,-2.487583
+nlp_survey_07360,Qwen 7B,3.613537,0,false,none,6.14727
+nlp_survey_00794,Qwen 7B,-1.518726,0,false,none,-7.143682
+nlp_survey_08003,GLM-4-9B,3.36274,0,false,none,2.607801
+nlp_survey_08165,GLM-4-9B,-0.707364,0,false,none,-3.288777
+nlp_survey_04248,GLM-4-9B,-0.532516,1,true,damage,-0.407173
+nlp_survey_08204,GLM-4-9B,-0.159968,0,false,none,-3.288777
+nlp_survey_03287,GLM-4-9B,2.346525,0,false,none,2.697518
+nlp_survey_01320,GLM-4-9B,1.762967,0,false,none,2.223275
+nlp_survey_02739,GLM-4-9B,3.58401,0,false,none,2.219489
+nlp_survey_09056,GLM-4-9B,-0.3152,0,false,none,-1.133888
+nlp_survey_02570,GLM-4-9B,-0.491716,0,false,none,-2.219489
+nlp_survey_00601,GLM-4-9B,2.158916,0,false,none,0.293486
+nlp_survey_00750,GLM-4-9B,2.046577,0,false,none,2.820464
+nlp_survey_08466,GLM-4-9B,-0.590982,0,false,none,-0.41264
+nlp_survey_06276,GLM-4-9B,0.926986,0,false,none,2.062126
+nlp_survey_09363,GLM-4-9B,0.137378,0,false,none,-4.242146
+nlp_survey_01422,GLM-4-9B,-0.660973,0,false,none,-2.223275
+nlp_survey_07083,GLM-4-9B,-0.566703,0,false,none,-1.818833
+nlp_survey_07433,GLM-4-9B,1.828569,0,false,none,3.150254
+nlp_survey_04892,GLM-4-9B,0.613669,0,false,none,2.515069
+nlp_survey_03240,GLM-4-9B,0.029009,0,false,none,-2.697518
+nlp_survey_06148,GLM-4-9B,-0.524505,0,false,none,-2.854718
+nlp_survey_08244,GLM-4-9B,-0.657877,0,false,none,-3.288777
+nlp_survey_03202,GLM-4-9B,-0.689103,0,false,none,-2.697518
+nlp_survey_04662,GLM-4-9B,1.825274,0,false,none,1.339689
+nlp_survey_09413,GLM-4-9B,-0.417248,0,false,none,-4.242146
+nlp_survey_00709,GLM-4-9B,0.92024,0,false,none,2.820464
+nlp_survey_01249,GLM-4-9B,0.534242,0,false,none,2.223275
+nlp_survey_07400,GLM-4-9B,2.849535,0,false,none,3.150254
+nlp_survey_04138,GLM-4-9B,1.561223,1,true,damage,0.407173
+nlp_survey_01295,GLM-4-9B,2.556931,0,false,none,2.223275
+nlp_survey_08136,GLM-4-9B,-0.487288,0,false,none,-3.288777
+nlp_survey_07766,GLM-4-9B,3.525723,0,false,none,3.260824
+nlp_survey_08130,GLM-4-9B,-0.270996,0,false,none,-3.288777
+nlp_survey_00296,GLM-4-9B,1.342374,0,false,none,0.592678
+nlp_survey_04795,GLM-4-9B,-0.653678,0,false,none,-2.515069
+nlp_survey_04449,GLM-4-9B,-0.464197,0,false,none,-1.339689
+nlp_survey_08680,GLM-4-9B,2.000585,0,false,none,0.41264
+nlp_survey_09764,GLM-4-9B,2.505006,0,false,none,0.563903
+nlp_survey_04873,GLM-4-9B,1.29869,0,false,none,2.515069
+nlp_survey_00001,GLM-4-9B,-0.323928,0,false,none,-0.592678
+nlp_survey_07047,GLM-4-9B,-0.533736,0,false,none,-1.818833
+nlp_survey_00177,GLM-4-9B,0.538865,0,false,none,0.592678
+nlp_survey_01038,GLM-4-9B,-0.915007,0,false,none,3.473858
+nlp_survey_02654,GLM-4-9B,1.605322,0,false,none,2.219489
+nlp_survey_05889,GLM-4-9B,-0.379139,0,false,none,-0.02296
+nlp_survey_00615,GLM-4-9B,1.2204,0,false,none,0.293486
+nlp_survey_00527,GLM-4-9B,0.764412,0,false,none,0.293486
+nlp_survey_04894,GLM-4-9B,0.661748,0,false,none,2.515069
+nlp_survey_04666,GLM-4-9B,0.288828,0,false,none,1.339689
+nlp_survey_08112,GLM-4-9B,1.85154,0,false,none,2.607801
+nlp_survey_06253,GLM-4-9B,0.507191,0,false,none,2.062126
+nlp_survey_08158,GLM-4-9B,-0.568613,0,false,none,-3.288777
+nlp_survey_09897,GLM-4-9B,-0.636803,0,false,none,-0.563903
+nlp_survey_07090,GLM-4-9B,-0.491233,0,false,none,-1.818833
+nlp_survey_09017,GLM-4-9B,2.418571,0,false,none,0.452133
+nlp_survey_07689,GLM-4-9B,2.862041,0,false,none,3.260824
+nlp_survey_04429,GLM-4-9B,-0.504198,0,false,none,-1.339689
+nlp_survey_00612,GLM-4-9B,1.796966,0,false,none,0.293486
+nlp_survey_06505,GLM-4-9B,-0.486291,0,false,none,-2.062126
+nlp_survey_07705,GLM-4-9B,2.798799,0,false,none,3.260824
+nlp_survey_05776,GLM-4-9B,-0.481698,0,false,none,-0.02296
+nlp_survey_02847,GLM-4-9B,-0.692647,0,false,none,-1.416002
+nlp_survey_01783,GLM-4-9B,1.160064,0,false,none,0.497727
+nlp_survey_09914,GLM-4-9B,-0.606999,0,false,none,-0.563903
+nlp_survey_06491,GLM-4-9B,-0.421288,0,false,none,-2.062126
+nlp_survey_01117,GLM-4-9B,-0.569267,0,false,none,-3.473858
+nlp_survey_09973,GLM-4-9B,-0.695184,0,false,none,-0.563903
+nlp_survey_08866,GLM-4-9B,-0.484117,0,false,none,-0.452133
+nlp_survey_06808,GLM-4-9B,-0.49225,0,false,none,-2.235907
+nlp_survey_02157,GLM-4-9B,-0.64538,0,false,none,-1.279209
+nlp_survey_04527,GLM-4-9B,1.438851,0,false,none,1.339689
+nlp_survey_07340,GLM-4-9B,2.464484,0,false,none,3.150254
+nlp_survey_05667,GLM-4-9B,3.787499,0,false,none,0.02296
+nlp_survey_09437,GLM-4-9B,-0.777391,0,false,none,-4.242146
+nlp_survey_00738,GLM-4-9B,0.645414,0,false,none,2.820464
+nlp_survey_04113,GLM-4-9B,2.032574,1,true,damage,0.407173
+nlp_survey_00263,GLM-4-9B,0.67661,0,false,none,0.592678
+nlp_survey_04343,GLM-4-9B,-0.410346,1,true,damage,-0.407173
+nlp_survey_07669,GLM-4-9B,3.729597,0,false,none,3.260824
+nlp_survey_05465,GLM-4-9B,-0.129991,0,false,none,0.049478
+nlp_survey_01371,GLM-4-9B,0.636335,0,false,none,2.223275
+nlp_survey_08994,GLM-4-9B,1.835357,0,false,none,0.452133
+nlp_survey_08891,GLM-4-9B,-0.447067,0,false,none,-0.452133
+nlp_survey_06921,GLM-4-9B,0.995328,0,false,none,1.818833
+nlp_survey_06319,GLM-4-9B,2.069168,0,false,none,2.062126
+nlp_survey_04323,GLM-4-9B,-0.502459,1,true,damage,-0.407173
+nlp_survey_07480,GLM-4-9B,1.906054,0,false,none,3.150254
+nlp_survey_03923,GLM-4-9B,-0.281141,0,false,none,2.301304
+nlp_survey_06268,GLM-4-9B,0.442933,0,false,none,2.062126
+nlp_survey_06802,GLM-4-9B,-0.595204,0,false,none,-2.235907
+nlp_survey_07403,GLM-4-9B,1.640184,0,false,none,3.150254
+nlp_survey_08374,GLM-4-9B,1.388554,0,false,none,3.288777
+nlp_survey_03149,GLM-4-9B,-0.736167,0,false,none,-2.697518
+nlp_survey_03154,GLM-4-9B,0.143722,0,false,none,-2.697518
+nlp_survey_07546,GLM-4-9B,-0.729244,0,false,none,-3.260824
+nlp_survey_05588,GLM-4-9B,-0.480164,0,false,none,0.049478
+nlp_survey_00255,GLM-4-9B,0.368706,0,false,none,0.592678
+nlp_survey_06849,GLM-4-9B,-0.414107,0,false,none,-2.235907
+nlp_survey_04551,GLM-4-9B,1.248654,0,false,none,1.339689
+nlp_survey_05044,GLM-4-9B,-0.524874,0,false,none,-1.249787
+nlp_survey_04148,GLM-4-9B,1.222104,1,true,damage,0.407173
+nlp_survey_06200,Mistral-7B,-0.277922,1,true,damage,-2.657463
+nlp_survey_04299,Mistral-7B,-0.842421,1,true,damage,-5.157163
+nlp_survey_03665,Mistral-7B,5.178073,0,false,none,-0.646236
+nlp_survey_00097,Mistral-7B,-0.807856,0,false,none,-2.290338
+nlp_survey_02495,Mistral-7B,4.689831,0,false,none,2.888784
+nlp_survey_00826,Mistral-7B,-0.754248,3,true,damage,-6.132364
+nlp_survey_03616,Mistral-7B,5.057324,0,false,none,-0.646236
+nlp_survey_04584,Mistral-7B,4.965109,0,false,none,-1.811773
+nlp_survey_06650,Mistral-7B,-0.719271,0,false,none,0.359222
+nlp_survey_09612,Mistral-7B,4.806262,0,false,none,5.648149
+nlp_survey_06346,Mistral-7B,-1.002636,0,false,none,1.517749
+nlp_survey_01970,Mistral-7B,5.865865,1,true,damage,5.164486
+nlp_survey_01009,Mistral-7B,4.45005,3,true,damage,6.034986
+nlp_survey_00404,Mistral-7B,3.783145,1,true,damage,2.377549
+nlp_survey_08024,Mistral-7B,5.009718,0,false,none,5.918097
+nlp_survey_00083,Mistral-7B,-0.962212,0,false,none,-2.290338
+nlp_survey_01687,Mistral-7B,4.695071,1,true,damage,5.538843
+nlp_survey_00069,Mistral-7B,-1.16119,0,false,none,-2.290338
+nlp_survey_03980,Mistral-7B,5.192438,0,false,none,4.023195
+nlp_survey_01617,Mistral-7B,4.589585,1,true,damage,5.538843
+nlp_survey_00195,Mistral-7B,5.154471,0,false,none,2.290338
+nlp_survey_09071,Mistral-7B,-0.748777,0,false,none,2.066325
+nlp_survey_05396,Mistral-7B,3.553772,1,true,damage,2.601086
+nlp_survey_04832,Mistral-7B,-1.110739,0,false,none,-1.564117
+nlp_survey_01136,Mistral-7B,-0.588285,3,true,damage,-6.034986
+nlp_survey_09049,Mistral-7B,-0.808538,0,false,none,2.066325
+nlp_survey_05125,Mistral-7B,3.918447,1,true,damage,3.468933
+nlp_survey_07605,Mistral-7B,-0.489418,0,false,none,-5.289562
+nlp_survey_07850,Mistral-7B,-1.067055,0,false,none,-5.918097
+nlp_survey_00649,Mistral-7B,4.011561,3,true,damage,6.132364
+nlp_survey_07344,Mistral-7B,5.153824,0,false,none,6.811086
+nlp_survey_00693,Mistral-7B,5.447095,3,true,damage,6.132364
+nlp_survey_04366,Mistral-7B,-1.009069,1,true,damage,-5.157163
+nlp_survey_01348,Mistral-7B,5.601009,1,true,damage,5.682028
+nlp_survey_07257,Mistral-7B,-0.865948,0,false,none,-6.811086
+nlp_survey_03146,Mistral-7B,-0.98749,0,false,none,-6.587978
+nlp_survey_05408,Mistral-7B,3.252473,1,true,damage,2.601086
+nlp_survey_00399,Mistral-7B,3.93625,1,true,damage,2.377549
+nlp_survey_07459,Mistral-7B,4.945352,0,false,none,6.811086
+nlp_survey_04929,Mistral-7B,4.544488,0,false,none,1.564117
+nlp_survey_02499,Mistral-7B,-1.087627,0,false,none,0.038969
+nlp_survey_01064,Mistral-7B,4.440677,3,true,damage,6.034986
+nlp_survey_06978,Mistral-7B,-1.261786,0,false,none,-0.043122
+nlp_survey_01696,Mistral-7B,5.181582,1,true,damage,5.538843
+nlp_survey_06921,Mistral-7B,-1.162533,0,false,none,-0.043122
+nlp_survey_03208,Mistral-7B,-0.899895,0,false,none,-6.587978
+nlp_survey_08986,Mistral-7B,-0.570559,1,true,damage,-4.673207
+nlp_survey_00592,Mistral-7B,-0.288963,1,true,damage,-2.377549
+nlp_survey_00375,Mistral-7B,5.054586,1,true,damage,2.377549
+nlp_survey_05772,Mistral-7B,-1.034288,0,false,none,-1.078435
+nlp_survey_06630,Mistral-7B,-0.709251,0,false,none,0.359222
+nlp_survey_05214,Mistral-7B,-0.598759,1,true,damage,-3.468933
+nlp_survey_00302,Mistral-7B,5.026711,0,false,none,2.290338
+nlp_survey_05466,Mistral-7B,-0.729987,1,true,damage,-2.601086
+nlp_survey_04428,Mistral-7B,-1.550375,0,false,none,1.811773
+nlp_survey_01781,Mistral-7B,-0.494209,1,true,damage,-5.538843
+nlp_survey_09333,Mistral-7B,4.866143,0,false,none,-2.066325
+nlp_survey_00712,Mistral-7B,5.691309,3,true,damage,6.132364
+nlp_survey_07773,Mistral-7B,5.028087,0,false,none,5.289562
+nlp_survey_03246,Mistral-7B,-0.791822,0,false,none,-6.587978
+nlp_survey_03858,Mistral-7B,-1.637714,0,false,none,-4.023195
+nlp_survey_01534,Mistral-7B,-0.170933,1,true,damage,-5.682028
+nlp_survey_01114,Mistral-7B,-0.45163,3,true,damage,-6.034986
+nlp_survey_08135,Mistral-7B,-0.777847,0,false,none,-4.479064
+nlp_survey_08167,Mistral-7B,-0.800383,0,false,none,-4.479064
+nlp_survey_09697,Mistral-7B,-1.217335,0,false,none,0.288059
+nlp_survey_06681,Mistral-7B,-0.726482,0,false,none,0.359222
+nlp_survey_03535,Mistral-7B,-0.734325,0,false,none,0.646236
+nlp_survey_09440,Mistral-7B,-1.012087,0,false,none,-5.648149
+nlp_survey_02417,Mistral-7B,5.30087,0,false,none,2.888784
+nlp_survey_07312,Mistral-7B,-0.855942,0,false,none,-6.811086
+nlp_survey_02253,Mistral-7B,-1.278585,0,false,none,-2.888784
+nlp_survey_07940,Mistral-7B,-0.848143,0,false,none,-5.918097
+nlp_survey_03107,Mistral-7B,5.25447,0,false,none,6.596251
+nlp_survey_04995,Mistral-7B,5.359505,1,true,damage,3.468933
+nlp_survey_00425,Mistral-7B,4.952929,1,true,damage,2.377549
+nlp_survey_03964,Mistral-7B,5.189107,0,false,none,4.023195
+nlp_survey_04052,Mistral-7B,5.239624,0,false,none,4.023195
+nlp_survey_09152,Mistral-7B,-1.14431,0,false,none,2.066325
+nlp_survey_02925,Mistral-7B,-1.249224,0,false,none,-6.596251
+nlp_survey_09630,Mistral-7B,5.040907,0,false,none,5.648149
+nlp_survey_06391,Mistral-7B,-0.877037,0,false,none,1.517749
+nlp_survey_02148,Mistral-7B,-1.018599,1,true,damage,-5.164486
+nlp_survey_03916,Mistral-7B,4.895243,0,false,none,4.023195
+nlp_survey_02336,Mistral-7B,-1.016281,0,false,none,-2.888784
+nlp_survey_07798,Mistral-7B,4.880126,0,false,none,5.289562
+nlp_survey_09559,Mistral-7B,4.926167,0,false,none,5.648149
+nlp_survey_01404,Mistral-7B,5.296597,1,true,damage,5.682028
+nlp_survey_08426,Mistral-7B,-1.074736,0,false,none,0.519895
+nlp_survey_06185,Mistral-7B,-0.364925,1,true,damage,-2.657463
+nlp_survey_01010,Mistral-7B,4.272135,3,true,damage,6.034986
+nlp_survey_05784,Mistral-7B,3.858372,0,false,none,1.078435
+nlp_survey_08115,Mistral-7B,-0.586906,0,false,none,-4.479064
+nlp_survey_00841,Mistral-7B,-0.335606,3,true,damage,-6.132364
+nlp_survey_01894,Mistral-7B,5.488441,1,true,damage,5.164486
+nlp_survey_06174,Mistral-7B,-0.545332,1,true,damage,-2.657463
+nlp_survey_01932,Mistral-7B,4.253985,1,true,damage,5.164486
+nlp_survey_00393,Mistral-7B,5.310177,1,true,damage,2.377549
+nlp_survey_05861,Mistral-7B,5.111014,0,false,none,1.078435
+nlp_survey_06498,Mistral-7B,5.221779,0,false,none,-1.517749

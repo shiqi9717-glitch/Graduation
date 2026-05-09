@@ -1,0 +1,7 @@
+{
+  "pipeline": "authority_pressure_pair_builder_v1",
+  "source_file": "/Users/shiqi/code/graduation-project/data/external/sycophancy_database/sycophancy_on_nlp_survey.jsonl",
+  "sample_n": 100,
+  "seed": 20260509,
+  "output_file": "/Users/shiqi/code/graduation-project/data/authority_pressure/authority_pressure_pairs.jsonl"
+}

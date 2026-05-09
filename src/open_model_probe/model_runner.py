@@ -48,6 +48,42 @@ class LocalProbeRunner:
                 "AutoTokenizer": AutoTokenizer,
             }
 
+    def _repair_custom_model_buffers(self) -> None:
+        """Materialize custom-code buffers that may remain on the meta device."""
+        assert self._model is not None
+        assert self._device is not None
+        for module in self._model.modules():
+            has_rotary_cache = all(hasattr(module, name) for name in ("cos_cached", "sin_cached", "max_seq_len_cached"))
+            if not has_rotary_cache:
+                continue
+            cos_cached = getattr(module, "cos_cached", None)
+            sin_cached = getattr(module, "sin_cached", None)
+            inv_freq = getattr(module, "inv_freq", None)
+            needs_rebuild = bool(
+                getattr(cos_cached, "is_meta", False)
+                or getattr(sin_cached, "is_meta", False)
+                or getattr(inv_freq, "is_meta", False)
+            )
+            if not needs_rebuild:
+                continue
+            if inv_freq is not None and hasattr(inv_freq, "shape") and len(inv_freq.shape) == 1 and int(inv_freq.shape[0]) > 0:
+                dim = int(inv_freq.shape[0]) * 2
+            elif cos_cached is not None and hasattr(cos_cached, "shape") and len(cos_cached.shape) >= 4 and int(cos_cached.shape[-1]) > 0:
+                dim = int(cos_cached.shape[-1])
+            else:
+                continue
+            seq_len = int(getattr(module, "max_seq_len_cached", 2048) or 2048)
+            base = float(getattr(module, "base", 10000.0) or 10000.0)
+            inv_freq = 1.0 / (
+                base ** (self._torch.arange(0, dim, 2, device=self._device, dtype=self._torch.float32) / dim)
+            )
+            t = self._torch.arange(seq_len, device=self._device, dtype=self._torch.float32)
+            freqs = self._torch.outer(t, inv_freq)
+            emb = self._torch.cat((freqs, freqs), dim=-1)
+            module.inv_freq = inv_freq
+            module.cos_cached = emb.cos()[None, None, :, :].to(self._torch.float32)
+            module.sin_cached = emb.sin()[None, None, :, :].to(self._torch.float32)
+
     def _resolve_device(self) -> str:
         self._lazy_imports()
         if self.config.device != "auto":
@@ -116,19 +152,23 @@ class LocalProbeRunner:
         tokenizer_cls = self._transformers["AutoTokenizer"]
         model_cls = self._transformers["AutoModelForCausalLM"]
         pretrained_source = self._resolve_pretrained_source()
-        try:
-            self._tokenizer = tokenizer_cls.from_pretrained(
-                pretrained_source,
-                trust_remote_code=True,
-                use_fast=True,
-            )
-        except Exception:
-            self._tokenizer = tokenizer_cls.from_pretrained(
-                pretrained_source,
-                trust_remote_code=True,
-                use_fast=True,
-                local_files_only=True,
-            )
+        tokenizer_attempts = [
+            {"trust_remote_code": True, "use_fast": True},
+            {"trust_remote_code": True, "use_fast": False},
+            {"trust_remote_code": True, "use_fast": True, "local_files_only": True},
+            {"trust_remote_code": True, "use_fast": False, "local_files_only": True},
+        ]
+        last_tokenizer_error: Exception | None = None
+        for kwargs in tokenizer_attempts:
+            try:
+                self._tokenizer = tokenizer_cls.from_pretrained(pretrained_source, **kwargs)
+                last_tokenizer_error = None
+                break
+            except Exception as exc:
+                last_tokenizer_error = exc
+        if self._tokenizer is None:
+            assert last_tokenizer_error is not None
+            raise last_tokenizer_error
         if self._tokenizer.pad_token_id is None and self._tokenizer.eos_token_id is not None:
             self._tokenizer.pad_token = self._tokenizer.eos_token
         self._device = self._resolve_device()
@@ -159,6 +199,7 @@ class LocalProbeRunner:
                 **model_kwargs,
             )
         self._model.to(self._device)
+        self._repair_custom_model_buffers()
         self._active_dtype = self._resolve_dtype()
         self._model.eval()
 
@@ -194,6 +235,12 @@ class LocalProbeRunner:
     def _forward(self, **model_kwargs):
         self.load()
         assert self._model is not None
+        # Some custom-code checkpoints (for example InternLM2) assume cache
+        # helper APIs from a narrower transformers version range. We do
+        # correctness-first probing and never rely on KV cache, so force it off
+        # unless a caller explicitly overrides it.
+        model_kwargs.setdefault("use_cache", False)
+        model_kwargs.setdefault("return_dict", True)
         with self._torch.no_grad():
             outputs = self._model(**model_kwargs)
         if self._outputs_have_nonfinite(outputs) and self._ensure_float32_stability():
@@ -214,9 +261,15 @@ class LocalProbeRunner:
         if decoder_layers is None:
             raise ValueError("Unsupported model structure: missing decoder layers.")
         final_norm = getattr(core_model, "norm", None) or getattr(core_model, "ln_f", None)
-        lm_head = getattr(self._model, "lm_head", None) or getattr(self._model, "embed_out", None)
+        lm_head = (
+            getattr(self._model, "lm_head", None)
+            or getattr(self._model, "embed_out", None)
+            or getattr(self._model, "output", None)
+        )
+        if lm_head is None and hasattr(self._model, "get_output_embeddings"):
+            lm_head = self._model.get_output_embeddings()
         if lm_head is None:
-            raise ValueError("Unsupported model structure: missing lm_head.")
+            raise ValueError("Unsupported model structure: missing output embedding head.")
         return core_model, decoder_layers, final_norm, lm_head
 
     def _layer_self_attention(self, layer_index: int):
@@ -226,6 +279,14 @@ class LocalProbeRunner:
         if attn is None:
             raise ValueError(f"Unsupported layer structure at layer {layer_index}: missing self attention module.")
         return attn
+
+    def _layer_mlp(self, layer_index: int):
+        _, decoder_layers, _, _ = self._resolve_model_parts()
+        layer = decoder_layers[int(layer_index)]
+        mlp = getattr(layer, "mlp", None) or getattr(layer, "feed_forward", None)
+        if mlp is None:
+            raise ValueError(f"Unsupported layer structure at layer {layer_index}: missing MLP/feed-forward module.")
+        return mlp
 
     def attention_head_layout(self, layer_index: int) -> Dict[str, int]:
         attn = self._layer_self_attention(int(layer_index))
@@ -536,6 +597,57 @@ class LocalProbeRunner:
         target_layers: Iterable[int],
     ) -> Dict[int, np.ndarray]:
         return self._capture_attention_pre_o_proj(prompt=prompt, target_layers=target_layers)
+
+    def capture_attention_output(
+        self,
+        *,
+        prompt: str,
+        target_layers: Iterable[int],
+    ) -> Dict[int, np.ndarray]:
+        raw = self._capture_attention_pre_o_proj(prompt=prompt, target_layers=target_layers)
+        captured: Dict[int, np.ndarray] = {}
+        for layer_index, value in raw.items():
+            tensor = np.asarray(value, dtype=np.float32)
+            if tensor.ndim == 1:
+                captured[int(layer_index)] = tensor
+            elif tensor.ndim == 2:
+                captured[int(layer_index)] = tensor[-1]
+            else:
+                raise ValueError(
+                    f"Layer {layer_index}: expected attention capture with ndim 1/2, got shape {tensor.shape}."
+                )
+        return captured
+
+    def capture_mlp_output(
+        self,
+        *,
+        prompt: str,
+        target_layers: Iterable[int],
+    ) -> Dict[int, np.ndarray]:
+        self.load()
+        encoded = self._encode_prompt(prompt)
+        captured: Dict[int, np.ndarray] = {}
+        handles = []
+
+        def make_hook(layer_index: int):
+            def _hook(_module, _inputs, output):
+                hidden = output[0] if isinstance(output, tuple) else output
+                tensor = hidden.detach().float().cpu().numpy()
+                captured[int(layer_index)] = tensor[0, -1]
+                return None
+
+            return _hook
+
+        for layer_index in target_layers:
+            mlp = self._layer_mlp(int(layer_index))
+            handles.append(mlp.register_forward_hook(make_hook(int(layer_index))))
+
+        try:
+            self._forward(**encoded, output_hidden_states=False, output_attentions=False)
+        finally:
+            for handle in handles:
+                handle.remove()
+        return captured
 
     def locate_wrong_option_question_positions(
         self,
@@ -1188,6 +1300,122 @@ class LocalProbeRunner:
         correct_option = str(ground_truth or "").strip().upper()
         wrong_option_norm = str(wrong_option or "").strip().upper()
         return {
+            "predicted_answer": max(answer_logits.items(), key=lambda item: item[1])[0],
+            "answer_logits": answer_logits,
+            "correct_option_logit": float(answer_logits.get(correct_option, float("nan"))),
+            "wrong_option_logit": float(answer_logits.get(wrong_option_norm, float("nan"))),
+            "correct_wrong_margin": float(answer_logits.get(correct_option, 0.0) - answer_logits.get(wrong_option_norm, 0.0)),
+            "top_token_logits": self._top_token_logits(last_logits, self.config.top_k),
+        }
+
+    def patch_attention_output_multi(
+        self,
+        *,
+        prompt: str,
+        layer_patch_map: Dict[int, Any],
+        ground_truth: str,
+        wrong_option: str,
+    ) -> Dict[str, Any]:
+        self.load()
+        assert self._model is not None
+        encoded = self._encode_prompt(prompt)
+        option_token_map = self._option_token_id_map()
+
+        prepared: Dict[int, Any] = {}
+        for layer_index, patch_tensor in layer_patch_map.items():
+            tensor = patch_tensor
+            if isinstance(tensor, np.ndarray):
+                tensor = self._torch.from_numpy(tensor)
+            prepared[int(layer_index)] = tensor.to(device=self._device, dtype=self._resolve_dtype())
+
+        hooks = []
+        for layer_index, patch_tensor in prepared.items():
+            attn = self._layer_self_attention(int(layer_index))
+            o_proj = getattr(attn, "o_proj", None)
+            if o_proj is None:
+                raise ValueError(f"Layer {layer_index} missing o_proj; cannot patch attention output.")
+
+            def make_hook(tensor):
+                def _hook(_module, inputs):
+                    hidden = inputs[0].clone()
+                    hidden[:, -1, :] = tensor.to(dtype=hidden.dtype)
+                    return (hidden,)
+
+                return _hook
+
+            hooks.append(o_proj.register_forward_pre_hook(make_hook(patch_tensor)))
+
+        try:
+            outputs = self._forward(**encoded, output_hidden_states=False)
+        finally:
+            for hook in hooks:
+                hook.remove()
+
+        last_logits = outputs.logits[0, -1, :].detach().float().cpu()
+        answer_logits = self._answer_logits_from_last_logits(last_logits, option_token_map)
+        correct_option = str(ground_truth or "").strip().upper()
+        wrong_option_norm = str(wrong_option or "").strip().upper()
+        return {
+            "patched_layers": sorted(int(layer_index) for layer_index in prepared),
+            "predicted_answer": max(answer_logits.items(), key=lambda item: item[1])[0],
+            "answer_logits": answer_logits,
+            "correct_option_logit": float(answer_logits.get(correct_option, float("nan"))),
+            "wrong_option_logit": float(answer_logits.get(wrong_option_norm, float("nan"))),
+            "correct_wrong_margin": float(answer_logits.get(correct_option, 0.0) - answer_logits.get(wrong_option_norm, 0.0)),
+            "top_token_logits": self._top_token_logits(last_logits, self.config.top_k),
+        }
+
+    def patch_mlp_output_multi(
+        self,
+        *,
+        prompt: str,
+        layer_patch_map: Dict[int, Any],
+        ground_truth: str,
+        wrong_option: str,
+    ) -> Dict[str, Any]:
+        self.load()
+        assert self._model is not None
+        encoded = self._encode_prompt(prompt)
+        option_token_map = self._option_token_id_map()
+
+        prepared: Dict[int, Any] = {}
+        for layer_index, patch_tensor in layer_patch_map.items():
+            tensor = patch_tensor
+            if isinstance(tensor, np.ndarray):
+                tensor = self._torch.from_numpy(tensor)
+            prepared[int(layer_index)] = tensor.to(device=self._device, dtype=self._resolve_dtype())
+
+        hooks = []
+        for layer_index, patch_tensor in prepared.items():
+            mlp = self._layer_mlp(int(layer_index))
+
+            def make_hook(tensor):
+                def _hook(_module, _inputs, output):
+                    if isinstance(output, tuple):
+                        hidden = output[0]
+                        patched = hidden.clone()
+                        patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                        return (patched, *output[1:])
+                    patched = output.clone()
+                    patched[:, -1, :] = tensor.to(dtype=patched.dtype)
+                    return patched
+
+                return _hook
+
+            hooks.append(mlp.register_forward_hook(make_hook(patch_tensor)))
+
+        try:
+            outputs = self._forward(**encoded, output_hidden_states=False)
+        finally:
+            for hook in hooks:
+                hook.remove()
+
+        last_logits = outputs.logits[0, -1, :].detach().float().cpu()
+        answer_logits = self._answer_logits_from_last_logits(last_logits, option_token_map)
+        correct_option = str(ground_truth or "").strip().upper()
+        wrong_option_norm = str(wrong_option or "").strip().upper()
+        return {
+            "patched_layers": sorted(int(layer_index) for layer_index in prepared),
             "predicted_answer": max(answer_logits.items(), key=lambda item: item[1])[0],
             "answer_logits": answer_logits,
             "correct_option_logit": float(answer_logits.get(correct_option, float("nan"))),
